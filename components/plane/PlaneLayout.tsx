@@ -1,65 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import {
-  Inbox,
-  Clock,
-  Star,
-  Search,
-  Settings,
-  HelpCircle,
-  CheckSquare,
-  FileText,
-  PenTool,
-  Menu,
-} from "lucide-react";
-import { Button } from "@/components/tailwind/ui/button";
+import { Inbox, Clock, Star, Search, Settings } from "lucide-react";
 import { SearchDialog } from "@/components/search/SearchDialog";
-import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/tailwind/ui/sheet";
 
 interface NavItem {
   href: string;
   label: string;
-  icon: React.ElementType;
-  index?: string;
+  symbol?: string;
   activeDot?: boolean;
-}
-
-interface NavGroup {
-  label: string;
-  index: string;
-  items: NavItem[];
 }
 
 export function PlaneLayout({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [toastText, setToastText] = useState("");
+  const [toastVisible, setToastVisible] = useState(false);
+  const [quickInput, setQuickInput] = useState("");
   const pathname = usePathname();
   const router = useRouter();
 
   const primaryItems: NavItem[] = [
-    { href: "/knowledge-base/inbox", label: "Inbox", icon: Inbox },
-    { href: "/knowledge-base/today", label: "Today", icon: Inbox, activeDot: true },
-    { href: "/knowledge-base/recent", label: "Recent", icon: Clock },
-    { href: "/knowledge-base/favorites", label: "Favorites", icon: Star },
+    { href: "/knowledge-base/inbox", label: "Inbox" },
+    { href: "/knowledge-base/today", label: "Today", activeDot: true },
+    { href: "/knowledge-base/recent", label: "Recent" },
+    { href: "/knowledge-base/favorites", label: "Favorites" },
   ];
 
   const spaceItems: NavItem[] = [
-    { href: "/knowledge-base", label: "Project", index: "01", icon: Inbox },
-    { href: "/knowledge-base/mathematics", label: "Mathematics", index: "02", icon: Inbox },
-    { href: "/knowledge-base/personal", label: "Personal", index: "03", icon: Inbox },
+    { href: "/knowledge-base", label: "Project" },
+    { href: "/knowledge-base/mathematics", label: "Mathematics" },
+    { href: "/knowledge-base/personal", label: "Personal" },
   ];
 
   const knowledgeItems: NavItem[] = [
-    { href: "/knowledge-base/notes", label: "Notes", icon: PenTool },
-    { href: "/knowledge-base/documents", label: "Documents", icon: FileText },
-    { href: "/knowledge-base/inquiries", label: "Inquiries", icon: HelpCircle },
-    { href: "/knowledge-base/tasks", label: "Tasks", icon: CheckSquare },
+    { href: "/knowledge-base/notes", label: "Notes", symbol: "⊢" },
+    { href: "/knowledge-base/documents", label: "Documents", symbol: "≔" },
+    { href: "/knowledge-base/inquiries", label: "Inquiries", symbol: "∴" },
+    { href: "/knowledge-base/tasks", label: "Tasks", symbol: "∵" },
   ];
 
   const isActive = (href: string) => {
@@ -69,52 +52,54 @@ export function PlaneLayout({ children }: { children: React.ReactNode }) {
     return pathname.startsWith(href);
   };
 
-  const handleCreateNew = () => {
-    setSearchOpen(true);
+  // 触发全局状态气泡
+  const triggerToast = (text: string) => {
+    setToastText(text);
+    setToastVisible(true);
   };
 
-  const renderNavItem = (item: NavItem) => {
-    const active = isActive(item.href);
-    return (
-      <Link
-        key={item.href}
-        href={item.href}
-        className={cn(
-          "nav-item w-full flex items-center justify-between py-1.5 relative text-xs font-medium font-sys",
-          active ? "text-text-main font-semibold" : "text-text-muted hover:text-text-main"
-        )}
-      >
-        {item.activeDot && active && <div className="absolute -left-4 indicator-dot" />}
-        <span className="truncate">{item.label}</span>
-        {item.index && <span className="font-mono text-[10px] opacity-40">{item.index}</span>}
-      </Link>
-    );
-  };
+  useEffect(() => {
+    if (toastVisible) {
+      const timer = setTimeout(() => setToastVisible(false), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [toastVisible]);
+
+  // 全局键盘快捷键
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && quickInput.trim()) {
+        e.preventDefault();
+        triggerToast(`Captured: ${quickInput}`);
+        setQuickInput("");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [quickInput]);
 
   return (
-    <div className="flex min-h-screen bg-canvas">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-[240px] bg-white hairline-r flex-shrink-0 z-20 h-screen fixed left-0 top-0 select-none">
-        {/* Brand Header */}
-        <div className="h-20 px-8 flex items-center justify-between hairline-b bg-white">
+    <div className="flex min-h-screen bg-canvas paper-texture">
+      {/* 侧边栏 */}
+      <aside className="hidden md:flex flex-col w-[260px] bg-white axis-r flex-shrink-0 z-20 h-screen fixed left-0 top-0 select-none">
+        <div className="h-20 px-6 flex items-center justify-between axis-b bg-white">
           <span className="font-sys text-base font-bold tracking-widest text-text-main">AXIOM</span>
           <span className="font-mono text-[9px] text-text-muted opacity-60">v0.6</span>
         </div>
 
-        {/* Navigation Menu */}
-        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 text-xs text-text-muted font-medium">
-          {/* + New Action */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 text-xs text-text-muted font-medium hide-scrollbar">
+          {/* + New */}
           <div className="pb-2">
             <button
               type="button"
-              onClick={handleCreateNew}
+              onClick={() => setSearchOpen(true)}
               className="w-full flex items-center justify-center gap-2 py-2 border border-text-main hover:bg-text-main hover:text-white text-text-main transition-all font-sys text-xs font-semibold"
             >
               + New
             </button>
           </div>
 
-          {/* Search Bar */}
+          {/* 搜索岛 (⌘K) */}
           <div className="pb-2">
             <button
               type="button"
@@ -129,28 +114,72 @@ export function PlaneLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          {/* Standard States */}
+          {/* 常规状态 */}
           <div className="space-y-2.5">
-            {primaryItems.map(renderNavItem)}
+            {primaryItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "nav-item w-full flex items-center justify-between py-1.5 relative text-xs font-medium font-sys",
+                    active ? "text-text-main font-semibold" : "text-text-muted hover:text-text-main"
+                  )}
+                >
+                  {item.activeDot && active && <div className="absolute -left-4 indicator-dot" />}
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
           </div>
 
           <div className="h-px bg-grid-line" />
 
-          {/* Spaces Section */}
+          {/* Space */}
           <div>
             <div className="text-[9px] uppercase tracking-widest text-text-muted opacity-50 mb-3">Space</div>
             <div className="space-y-2.5">
-              {spaceItems.map(renderNavItem)}
+              {spaceItems.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "nav-item w-full flex items-center justify-between py-1.5 relative text-xs font-medium font-sys",
+                      active ? "text-text-main font-semibold" : "text-text-muted hover:text-text-main"
+                    )}
+                  >
+                    <span>🧬 {item.label}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
           <div className="h-px bg-grid-line" />
 
-          {/* Knowledge Section */}
+          {/* 核心：具有数学/逻辑符号树的 Knowledge 目录 */}
           <div>
             <div className="text-[9px] uppercase tracking-widest text-text-muted opacity-50 mb-3">Knowledge</div>
             <div className="space-y-2.5">
-              {knowledgeItems.map(renderNavItem)}
+              {knowledgeItems.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "nav-item w-full flex items-center gap-3 py-1.5 relative text-xs font-medium font-sys",
+                      active ? "text-text-main font-semibold" : "text-text-muted hover:text-text-main"
+                    )}
+                  >
+                    <span className="font-mono text-sm opacity-60">{item.symbol}</span>
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
@@ -169,9 +198,31 @@ export function PlaneLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main Content (Offset left sidebar width) */}
-      <div className="flex-1 flex flex-col min-w-0 md:ml-[240px]">
+      {/* 主界面偏置 */}
+      <div className="flex-1 flex flex-col min-w-0 md:ml-[240px] relative pb-12">
         {children}
+
+        {/* 捕获栏 (Quick Capture) */}
+        <div className="quick-capture">
+          <span className="text-[9px] font-mono tracking-widest uppercase text-text-muted">Capture</span>
+          <input
+            type="text"
+            placeholder="Type to capture a thought, idea, or task..."
+            value={quickInput}
+            onChange={(e) => setQuickInput(e.target.value)}
+          />
+          <span className="text-[9px] font-mono tracking-widest uppercase text-text-muted">⌘⏎</span>
+        </div>
+      </div>
+
+      {/* 状态 Toast */}
+      <div
+        className={cn(
+          "fixed bottom-16 right-6 bg-black text-white font-mono text-xs px-4 py-2 border border-black shadow-lg transition-all duration-300 z-50",
+          toastVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+        )}
+      >
+        {toastText}
       </div>
 
       <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />

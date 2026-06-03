@@ -11,12 +11,14 @@ nextjs-portal {
    ============================================ */
 
 :root {
-  --bg-canvas: #FAF9F6;     /* 极温润的珍珠灰底色 */
+  --bg-canvas: #F6F5F0;      /* 精确还原：温暖的新闻纸灰 */
   --bg-surface: #FFFFFF;    /* 纯白 */
-  --text-main: #111111;     /* 墨黑 */
-  --text-muted: #8E8E88;    /* 辅助灰 */
-  --swiss-red: #E32636;     /* 瑞士红 */
-  --grid-line: #E8E7E1;     /* 极细网格线 */
+  --text-main: #121212;     /* 墨黑书写体 */
+  --text-muted: #A0A0A0;    /* 辅助灰色 */
+  --swiss-red: #E32636;     /* 瑞士红指示色 */
+  --swiss-blue: #1E3A8A;    /* 普鲁士蓝 */
+  --swiss-yellow: #F5D100;  /* 荧光黄 */
+  --grid-line: #E0DDD6;     /* 极细的工程结构线 */
   --shadow-card: 4px 4px 0px rgba(17, 17, 17, 0.06);
 }
 
@@ -43,7 +45,7 @@ nextjs-portal {
   }
 
   * {
-    border-radius: 0px !important; /* 遵循严格的瑞士国际主义直角 */
+    border-radius: 0px !important; /* 绝对直角，捍卫瑞士主义理性 */
     border-color: var(--grid-line) !important;
   }
 
@@ -53,23 +55,31 @@ nextjs-portal {
   }
 }
 
-/* 极细结构线 */
-.hairline-r { border-right: 1px solid var(--grid-line); }
-.hairline-l { border-left: 1px solid var(--grid-line); }
-.hairline-b { border-bottom: 1px solid var(--grid-line); }
-.hairline-t { border-top: 1px solid var(--grid-line); }
+/* —————————————————— 纸张微网格纹理 (还原核心细节) —————————————————— */
+.paper-texture {
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0, 0, 0, 0.015) 40px, rgba(0, 0, 0, 0.015) 41px),
+    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0, 0, 0, 0.015) 40px, rgba(0, 0, 0, 0.015) 41px);
+  background-size: 41px 41px;
+}
+
+/* 极细工程结构线 */
+.axis-r { border-right: 2px solid var(--grid-line); }
+.axis-l { border-left: 2px solid var(--grid-line); }
+.axis-b { border-bottom: 2px solid var(--grid-line); }
+.axis-t { border-top: 2px solid var(--grid-line); }
 
 /* 物理卡片触感 */
 .brutal-card {
   background: var(--bg-surface);
   border: 1px solid var(--text-main);
-  box-shadow: var(--shadow-card);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   cursor: pointer;
 }
 .brutal-card:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px rgba(17, 17, 17, 0.10);
+  box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.06);
 }
 
 /* 卡片类别装饰色线 */
@@ -77,22 +87,10 @@ nextjs-portal {
 .card-definition { border-left: 4px solid var(--text-muted) !important; }
 .card-lemma { border-left: 4px solid var(--swiss-red) !important; }
 
-/* 学术级水平时间轨道 (Gantt) */
-.academic-track {
-  background: var(--bg-surface);
-  border: 1px solid var(--text-main);
-  padding: 0.5rem 1rem;
-  box-shadow: 2px 2px 0px rgba(17, 17, 17, 0.03);
-  transition: border-color 0.12s ease;
-}
-.academic-track:hover {
-  border-color: var(--swiss-red);
-}
-
 /* 阶段看板列 (Kanban) */
 .stage-column {
   background: var(--bg-surface);
-  border: 1px solid var(--grid-line);
+  border: 2px solid var(--text-main);
   padding: 0.75rem;
   min-height: 240px;
 }
@@ -103,4 +101,53 @@ nextjs-portal {
   margin-bottom: 0.5rem;
   font-size: 12px;
   cursor: grab;
+  transition: transform 0.1s ease;
+}
+.stage-card:hover {
+  transform: translateX(2px);
+  border-color: var(--text-main);
+}
+
+/* 手写注解层 (解构主义细节) */
+.float-note {
+  position: absolute;
+  font-family: var(--font-reading), serif;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.25rem 0.8rem;
+  border-left: 4px solid var(--swiss-red);
+  transform: rotate(-1deg);
+  box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.04);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 快速捕获输入行 (Quick Capture) */
+.quick-capture {
+  position: fixed;
+  bottom: 0;
+  left: 240px;
+  right: 0;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--grid-line);
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+  z-index: 40;
+  gap: 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.quick-capture input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-sys), sans-serif;
+  font-size: 13px;
+  color: var(--text-main);
 }

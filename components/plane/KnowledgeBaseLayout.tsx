@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { ArrowLeft, FileText, ChevronRight } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { Button } from "@/components/tailwind/ui/button";
 import Editor from "@/components/tailwind/editor";
 import { useI18n } from "@/lib/i18n";
@@ -24,8 +24,17 @@ export function KnowledgeBaseLayout({
 
   if (mode === "edit" && documentId) {
     return (
-      <div className="flex h-full min-h-screen w-full flex-col overflow-hidden bg-canvas">
-        {/* 顶栏：学术级极简坐标指示 */}
+      <div className="flex h-full min-h-screen w-full flex-col overflow-hidden bg-canvas relative">
+        
+        {/* 还原：解构主义物理浮动贴纸 */}
+        <div className="float-note hidden xl:block" style={{ right: "340px", top: "100px", transform: "rotate(3deg)" }}>
+          ⚡ check Lemma 2.4
+        </div>
+        <div className="float-note hidden xl:block" style={{ right: "380px", top: "180px", transform: "rotate(-2.5deg)", background: "rgba(255,245,200,0.9)" }}>
+          ← see also Heine–Borel
+        </div>
+
+        {/* 顶栏 */}
         <div className="flex h-20 items-center justify-between bg-canvas px-16 z-10 border-b border-grid-line shrink-0">
           <div className="flex items-center gap-2">
             <Button
@@ -45,11 +54,10 @@ export function KnowledgeBaseLayout({
           </div>
         </div>
 
-        {/* 极简分屏：左侧编辑，右侧检查器 */}
         <div className="flex-1 flex h-full overflow-hidden">
-          {/* 左侧写作画布 */}
+          {/* 黄金书写区 */}
           <div className="flex-1 overflow-auto px-16 py-12 flex justify-center">
-            <div className="w-full max-w-[850px]">
+            <div className="w-full max-w-[820px] pl-4">
               <Editor documentId={documentId} />
             </div>
           </div>
@@ -60,7 +68,7 @@ export function KnowledgeBaseLayout({
               docId={documentId} 
               backlinks={[]} 
               onNavigate={() => {}} 
-              documentTitle={t("knowledgeBase.currentDocument")}
+              documentTitle="Compactness"
             />
           </aside>
         </div>

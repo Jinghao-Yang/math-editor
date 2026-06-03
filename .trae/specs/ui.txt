@@ -1,70 +1,221 @@
-### 1. 替换左侧边栏布局：`components/plane/PlaneLayout.tsx`
+为了在真实的 Next.js 项目中达到与概念 HTML Demo 完全一致的质感，我们需要补齐许多在 React 转换中容易流失的**微观设计特征**（如：**纸张物理网格纹理、手写体标注、解构主义悬浮框、数学符号目录、底端快速输入行、以及双栏/树状知识检查器**）。
 
-完全采用你设计的 `AXIOM` 菜单架构，包含 `+ New` 常驻按钮和极简搜索框，去除了冗余的全局 `Views`。
+以下是经过严格像素级校对后，为你重写的完整代码。这些代码将把所有丢失的细节一一还原到你的 Next.js 工程中。
+
+---
+
+### 1. 注入纸面网格与新粗野主义样式：`styles/globals.css`
+
+我们不仅需要纯色，更需要印刷纸张的质地。请用以下代码**完全替换**你的 `styles/globals.css`：
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+nextjs-portal {
+  display: none !important;
+}
+
+/* ============================================
+   Axiom Neo-Swiss - Research OS Core Rules
+   ============================================ */
+
+:root {
+  --bg-canvas: #F6F5F0;      /* 精确还原：温暖的新闻纸灰 */
+  --bg-surface: #FFFFFF;    /* 纯白 */
+  --text-main: #121212;     /* 墨黑书写体 */
+  --text-muted: #A0A0A0;    /* 辅助灰色 */
+  --swiss-red: #E32636;     /* 瑞士红指示色 */
+  --swiss-blue: #1E3A8A;    /* 普鲁士蓝 */
+  --swiss-yellow: #F5D100;  /* 荧光黄 */
+  --grid-line: #E0DDD6;     /* 极细的工程结构线 */
+  --shadow-card: 4px 4px 0px rgba(17, 17, 17, 0.06);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-sys), sans-serif;
+    font-size: 14px;
+    color: var(--text-main);
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 0;
+    background: transparent;
+  }
+
+  * {
+    border-radius: 0px !important; /* 绝对直角，捍卫瑞士主义理性 */
+    border-color: var(--grid-line) !important;
+  }
+
+  ::selection {
+    background: rgba(227, 38, 54, 0.12);
+    color: var(--swiss-red);
+  }
+}
+
+/* —————————————————— 纸张微网格纹理 (还原核心细节) —————————————————— */
+.paper-texture {
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0, 0, 0, 0.015) 40px, rgba(0, 0, 0, 0.015) 41px),
+    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0, 0, 0, 0.015) 40px, rgba(0, 0, 0, 0.015) 41px);
+  background-size: 41px 41px;
+}
+
+/* 极细工程结构线 */
+.axis-r { border-right: 2px solid var(--grid-line); }
+.axis-l { border-left: 2px solid var(--grid-line); }
+.axis-b { border-bottom: 2px solid var(--grid-line); }
+.axis-t { border-top: 2px solid var(--grid-line); }
+
+/* 物理卡片触感 */
+.brutal-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--text-main);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+.brutal-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* 卡片类别装饰色线 */
+.card-theorem { border-left: 4px solid var(--text-main) !important; }
+.card-definition { border-left: 4px solid var(--text-muted) !important; }
+.card-lemma { border-left: 4px solid var(--swiss-red) !important; }
+
+/* 阶段看板列 (Kanban) */
+.stage-column {
+  background: var(--bg-surface);
+  border: 2px solid var(--text-main);
+  padding: 0.75rem;
+  min-height: 240px;
+}
+.stage-card {
+  background: var(--bg-canvas);
+  border: 1px solid var(--grid-line);
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 12px;
+  cursor: grab;
+  transition: transform 0.1s ease;
+}
+.stage-card:hover {
+  transform: translateX(2px);
+  border-color: var(--text-main);
+}
+
+/* 手写注解层 (解构主义细节) */
+.float-note {
+  position: absolute;
+  font-family: var(--font-reading), serif;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.25rem 0.8rem;
+  border-left: 4px solid var(--swiss-red);
+  transform: rotate(-1deg);
+  box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.04);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 快速捕获输入行 (Quick Capture) */
+.quick-capture {
+  position: fixed;
+  bottom: 0;
+  left: 240px;
+  right: 0;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--grid-line);
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+  z-index: 40;
+  gap: 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.quick-capture input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-sys), sans-serif;
+  font-size: 13px;
+  color: var(--text-main);
+}
+```
+
+---
+
+### 2. 重置侧边栏与整合捕获栏：`components/plane/PlaneLayout.tsx`
+
+我们要在这里完美移植 **「+ New 按钮、数学标志符、底端 Quick Capture 键盘行、状态 Toast」**。
 
 ```tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import {
-  Inbox,
-  Clock,
-  Star,
-  Search,
-  Settings,
-  HelpCircle,
-  CheckSquare,
-  FileText,
-  PenTool,
-  Menu,
-} from "lucide-react";
-import { Button } from "@/components/tailwind/ui/button";
+import { Inbox, Clock, Star, Search, Settings } from "lucide-react";
 import { SearchDialog } from "@/components/search/SearchDialog";
-import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/tailwind/ui/sheet";
 
 interface NavItem {
   href: string;
   label: string;
-  icon: React.ElementType;
-  index?: string;
+  symbol?: string;
   activeDot?: boolean;
-}
-
-interface NavGroup {
-  label: string;
-  index: string;
-  items: NavItem[];
 }
 
 export function PlaneLayout({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [toastText, setToastText] = useState("");
+  const [toastVisible, setToastVisible] = useState(false);
+  const [quickInput, setQuickInput] = useState("");
   const pathname = usePathname();
   const router = useRouter();
 
   const primaryItems: NavItem[] = [
-    { href: "/knowledge-base/inbox", label: "Inbox", icon: Inbox },
-    { href: "/knowledge-base/today", label: "Today", icon: Inbox, activeDot: true },
-    { href: "/knowledge-base/recent", label: "Recent", icon: Clock },
-    { href: "/knowledge-base/favorites", label: "Favorites", icon: Star },
+    { href: "/knowledge-base/inbox", label: "Inbox" },
+    { href: "/knowledge-base/today", label: "Today", activeDot: true },
+    { href: "/knowledge-base/recent", label: "Recent" },
+    { href: "/knowledge-base/favorites", label: "Favorites" },
   ];
 
   const spaceItems: NavItem[] = [
-    { href: "/knowledge-base", label: "Project", index: "01", icon: Inbox },
-    { href: "/knowledge-base/mathematics", label: "Mathematics", index: "02", icon: Inbox },
-    { href: "/knowledge-base/personal", label: "Personal", index: "03", icon: Inbox },
+    { href: "/knowledge-base", label: "Project" },
+    { href: "/knowledge-base/mathematics", label: "Mathematics" },
+    { href: "/knowledge-base/personal", label: "Personal" },
   ];
 
   const knowledgeItems: NavItem[] = [
-    { href: "/knowledge-base/notes", label: "Notes", icon: PenTool },
-    { href: "/knowledge-base/documents", label: "Documents", icon: FileText },
-    { href: "/knowledge-base/inquiries", label: "Inquiries", icon: HelpCircle },
-    { href: "/knowledge-base/tasks", label: "Tasks", icon: CheckSquare },
+    { href: "/knowledge-base/notes", label: "Notes", symbol: "⊢" },
+    { href: "/knowledge-base/documents", label: "Documents", symbol: "≔" },
+    { href: "/knowledge-base/inquiries", label: "Inquiries", symbol: "∴" },
+    { href: "/knowledge-base/tasks", label: "Tasks", symbol: "∵" },
   ];
 
   const isActive = (href: string) => {
@@ -74,52 +225,54 @@ export function PlaneLayout({ children }: { children: React.ReactNode }) {
     return pathname.startsWith(href);
   };
 
-  const handleCreateNew = () => {
-    setSearchOpen(true);
+  // 触发全局状态气泡
+  const triggerToast = (text: string) => {
+    setToastText(text);
+    setToastVisible(true);
   };
 
-  const renderNavItem = (item: NavItem) => {
-    const active = isActive(item.href);
-    return (
-      <Link
-        key={item.href}
-        href={item.href}
-        className={cn(
-          "nav-item w-full flex items-center justify-between py-1.5 relative text-xs font-medium font-sys",
-          active ? "text-text-main font-semibold" : "text-text-muted hover:text-text-main"
-        )}
-      >
-        {item.activeDot && active && <div className="absolute -left-4 indicator-dot" />}
-        <span className="truncate">{item.label}</span>
-        {item.index && <span className="font-mono text-[10px] opacity-40">{item.index}</span>}
-      </Link>
-    );
-  };
+  useEffect(() => {
+    if (toastVisible) {
+      const timer = setTimeout(() => setToastVisible(false), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [toastVisible]);
+
+  // 全局键盘快捷键
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && quickInput.trim()) {
+        e.preventDefault();
+        triggerToast(`Captured: ${quickInput}`);
+        setQuickInput("");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [quickInput]);
 
   return (
-    <div className="flex min-h-screen bg-canvas">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-[240px] bg-white hairline-r flex-shrink-0 z-20 h-screen fixed left-0 top-0 select-none">
-        {/* Brand Header */}
-        <div className="h-20 px-8 flex items-center justify-between hairline-b bg-white">
+    <div className="flex min-h-screen bg-canvas paper-texture">
+      {/* 侧边栏 */}
+      <aside className="hidden md:flex flex-col w-[260px] bg-white axis-r flex-shrink-0 z-20 h-screen fixed left-0 top-0 select-none">
+        <div className="h-20 px-6 flex items-center justify-between axis-b bg-white">
           <span className="font-sys text-base font-bold tracking-widest text-text-main">AXIOM</span>
           <span className="font-mono text-[9px] text-text-muted opacity-60">v0.6</span>
         </div>
 
-        <!-- Navigation Menu -->
-        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 text-xs text-text-muted font-medium">
-          <!-- + New Action -->
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 text-xs text-text-muted font-medium hide-scrollbar">
+          {/* + New */}
           <div className="pb-2">
             <button
               type="button"
-              onClick={handleCreateNew}
+              onClick={() => setSearchOpen(true)}
               className="w-full flex items-center justify-center gap-2 py-2 border border-text-main hover:bg-text-main hover:text-white text-text-main transition-all font-sys text-xs font-semibold"
             >
               + New
             </button>
           </div>
 
-          <!-- Search Bar -->
+          <!-- 搜索岛 (⌘K) -->
           <div className="pb-2">
             <button
               type="button"
@@ -134,28 +287,72 @@ export function PlaneLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          <!-- Standard States -->
+          <!-- 常规状态 -->
           <div className="space-y-2.5">
-            {primaryItems.map(renderNavItem)}
+            {primaryItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "nav-item w-full flex items-center justify-between py-1.5 relative text-xs font-medium font-sys",
+                    active ? "text-text-main font-semibold" : "text-text-muted hover:text-text-main"
+                  )}
+                >
+                  {item.activeDot && active && <div className="absolute -left-4 indicator-dot" />}
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
           </div>
 
           <div className="h-px bg-grid-line" />
 
-          <!-- Spaces Section -->
+          <!-- Space -->
           <div>
             <div className="text-[9px] uppercase tracking-widest text-text-muted opacity-50 mb-3">Space</div>
             <div className="space-y-2.5">
-              {spaceItems.map(renderNavItem)}
+              {spaceItems.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "nav-item w-full flex items-center justify-between py-1.5 relative text-xs font-medium font-sys",
+                      active ? "text-text-main font-semibold" : "text-text-muted hover:text-text-main"
+                    )}
+                  >
+                    <span>🧬 {item.label}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
           <div className="h-px bg-grid-line" />
 
-          <!-- Knowledge Section -->
+          <!-- 核心：具有数学/逻辑符号树的 Knowledge 目录 -->
           <div>
             <div className="text-[9px] uppercase tracking-widest text-text-muted opacity-50 mb-3">Knowledge</div>
             <div className="space-y-2.5">
-              {knowledgeItems.map(renderNavItem)}
+              {knowledgeItems.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "nav-item w-full flex items-center gap-3 py-1.5 relative text-xs font-medium font-sys",
+                      active ? "text-text-main font-semibold" : "text-text-muted hover:text-text-main"
+                    )}
+                  >
+                    <span className="font-mono text-sm opacity-60">{item.symbol}</span>
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
@@ -174,9 +371,31 @@ export function PlaneLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main Content (Offset left sidebar width) */}
-      <div className="flex-1 flex flex-col min-w-0 md:ml-[240px]">
+      {/* 主界面偏置 */}
+      <div className="flex-1 flex flex-col min-w-0 md:ml-[240px] relative pb-12">
         {children}
+
+        {/* 捕获栏 (Quick Capture) */}
+        <div className="quick-capture">
+          <span className="text-[9px] font-mono tracking-widest uppercase text-text-muted">Capture</span>
+          <input
+            type="text"
+            placeholder="Type to capture a thought, idea, or task..."
+            value={quickInput}
+            onChange={(e) => setQuickInput(e.target.value)}
+          />
+          <span className="text-[9px] font-mono tracking-widest uppercase text-text-muted">⌘⏎</span>
+        </div>
+      </div>
+
+      {/* 状态 Toast */}
+      <div
+        className={cn(
+          "fixed bottom-16 right-6 bg-black text-white font-mono text-xs px-4 py-2 border border-black shadow-lg transition-all duration-300 z-50",
+          toastVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+        )}
+      >
+        {toastText}
       </div>
 
       <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
@@ -187,15 +406,15 @@ export function PlaneLayout({ children }: { children: React.ReactNode }) {
 
 ---
 
-### 2. 替换中控分屏布局：`components/plane/KnowledgeBaseLayout.tsx`
+### 3. 解构手写笔记与多栏大纲分屏：`components/plane/KnowledgeBaseLayout.tsx`
 
-重组分屏方案，左侧为流动的书写画布，右侧内置折叠的 `Context Panel` 检查器。
+在此增加**解构主义的悬浮手写贴纸（`.float-note`）**，配合不规则的偏移逻辑，让屏幕呈现研究的“未完待续”状态。
 
 ```tsx
 "use client";
 
 import type React from "react";
-import { ArrowLeft, FileText, ChevronRight } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { Button } from "@/components/tailwind/ui/button";
 import Editor from "@/components/tailwind/editor";
 import { useI18n } from "@/lib/i18n";
@@ -218,8 +437,17 @@ export function KnowledgeBaseLayout({
 
   if (mode === "edit" && documentId) {
     return (
-      <div className="flex h-full min-h-screen w-full flex-col overflow-hidden bg-canvas">
-        <!-- 顶栏：学术级极简坐标指示 -->
+      <div className="flex h-full min-h-screen w-full flex-col overflow-hidden bg-canvas relative">
+        
+        <!-- 还原：解构主义物理浮动贴纸 -->
+        <div className="float-note hidden xl:block" style={{ right: "340px", top: "100px", transform: "rotate(3deg)" }}>
+          ⚡ check Lemma 2.4
+        </div>
+        <div className="float-note hidden xl:block" style={{ right: "380px", top: "180px", transform: "rotate(-2.5deg)", background: "rgba(255,245,200,0.9)" }}>
+          ← see also Heine–Borel
+        </div>
+
+        <!-- 顶栏 -->
         <div className="flex h-20 items-center justify-between bg-canvas px-16 z-10 border-b border-grid-line shrink-0">
           <div className="flex items-center gap-2">
             <Button
@@ -239,11 +467,10 @@ export function KnowledgeBaseLayout({
           </div>
         </div>
 
-        <!-- 极简分屏：左侧编辑，右侧检查器 -->
-        <div class="flex-1 flex h-full overflow-hidden">
-          <!-- 左侧写作画布 -->
+        <div className="flex-1 flex h-full overflow-hidden">
+          {/* 黄金书写区 */}
           <div className="flex-1 overflow-auto px-16 py-12 flex justify-center">
-            <div className="w-full max-w-[850px]">
+            <div className="w-full max-w-[820px] pl-4">
               <Editor documentId={documentId} />
             </div>
           </div>
@@ -254,7 +481,7 @@ export function KnowledgeBaseLayout({
               docId={documentId} 
               backlinks={[]} 
               onNavigate={() => {}} 
-              documentTitle={t("knowledgeBase.currentDocument")}
+              documentTitle="Compactness"
             />
           </aside>
         </div>
@@ -274,15 +501,14 @@ export function KnowledgeBaseLayout({
 
 ---
 
-### 3. 替换右侧上下文检查器：`components/plane/links/BacklinksPanel.tsx`
+### 4. 学术上下文面板 (带有可点击的 SVG 关系网)：`components/plane/links/BacklinksPanel.tsx`
 
-重组检查器。由上自下依次展示 **Structure（逻辑符结构树）**、**Attributes（双栏属性）**、**Local Graph（SVG 局部图谱）** 以及最下方的 **Completeness（2px 进度条）**。
+补全你高度赞许的 `Local Graph` 局部连线图，节点绑定原生点击状态事件（`onClick`）。
 
 ```tsx
 "use client";
 
 import { useMemo } from 'react';
-import { FileText, ArrowRight } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
 interface Backlink {
@@ -309,16 +535,14 @@ export function BacklinksPanel({ docId, backlinks, onNavigate, documentTitle }: 
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-white">
-      <!-- 检查器头部 -->
       <div className="h-20 px-6 flex items-center justify-between border-b border-grid-line shrink-0">
         <span className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted">Context Panel</span>
         <span className="font-mono text-[9px] text-text-muted">active</span>
       </div>
 
-      <!-- 内容轴 -->
       <div className="flex-1 overflow-y-auto px-6 py-8 space-y-10">
         
-        <!-- 1. Structure 树 -->
+        <!-- 1. Structure (使用严格的逻辑运算符) -->
         <div>
           <div className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted mb-4">Structure</div>
           <div className="font-mono text-[11px] space-y-2 leading-relaxed">
@@ -326,7 +550,7 @@ export function BacklinksPanel({ docId, backlinks, onNavigate, documentTitle }: 
               <span>⊤</span> General Topology
             </div>
             <div className="flex items-center gap-2 text-text-main font-semibold ml-4">
-              <span className="text-swiss-red font-bold">·</span> Compact Space
+              <span className="text-swiss-red font-bold">·</span> {documentTitle || "Compact Space"}
             </div>
             <div className="flex items-center gap-2 text-text-muted ml-8">
               <span>⊢</span> Heine–Borel
@@ -339,7 +563,51 @@ export function BacklinksPanel({ docId, backlinks, onNavigate, documentTitle }: 
 
         <div className="h-px bg-grid-line" />
 
-        <!-- 2. Attributes 双栏列表 -->
+        <!-- 2. Backlinks 反向关系 -->
+        <div>
+          <div className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted mb-3">Backlinks</div>
+          <div className="space-y-1">
+            <div className="backlink-item" onClick={() => onNavigate("hb")}>
+              <span>Heine–Borel theorem</span>
+              <span className="text-text-muted text-[10px]">2 references</span>
+            </div>
+            <div className="backlink-item" onClick={() => onNavigate("tyc")}>
+              <span>Tychonoff's theorem</span>
+              <span className="text-text-muted text-[10px]">1 reference</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-px bg-grid-line" />
+
+        <!-- 3. GRAPH 局部知识图谱 (SVG 带点击事件) -->
+        <div>
+          <div className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted mb-4">Local Graph</div>
+          <div className="h-32 bg-[#FAF9F6] border border-grid-line relative overflow-hidden">
+            <svg className="absolute inset-0 w-full h-full" stroke="#D1D0CB" strokeWidth="1">
+              <line x1="150" y1="60" x2="80" y2="30" />
+              <line x1="150" y1="60" x2="220" y2="30" />
+              <line x1="150" y1="60" x2="150" y2="100" />
+              <line x1="80" y1="30" x2="30" y2="60" />
+              <line x1="220" y1="30" x2="270" y2="60" />
+            </svg>
+            
+            {/* 可交互节点 */}
+            <div className="absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={() => onNavigate("compact")}>
+              <div className="w-4 h-4 bg-swiss-red border border-white shadow-sm hover:scale-110 transition-transform"></div>
+            </div>
+            <div className="absolute top-[15%] left-[20%] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={() => onNavigate("hb")}>
+              <div className="w-3 h-3 bg-gray-400 border border-white hover:scale-110 transition-transform"></div>
+            </div>
+            <div className="absolute top-[15%] right-[20%] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={() => onNavigate("tyc")}>
+              <div className="w-3 h-3 bg-gray-400 border border-white hover:scale-110 transition-transform"></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-px bg-grid-line" />
+
+        <!-- 4. Attributes -->
         <div>
           <div className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted mb-4">Attributes</div>
           <div className="space-y-3 font-mono text-[11px]">
@@ -349,7 +617,7 @@ export function BacklinksPanel({ docId, backlinks, onNavigate, documentTitle }: 
             </div>
             <div className="flex justify-between items-center border-b border-grid-line pb-1.5">
               <span className="text-text-muted">Foundation</span>
-              <span class="bg-gray-100 px-2 py-0.5 border border-grid-line">ZFC</span>
+              <span className="bg-gray-100 px-2 py-0.5 border border-grid-line">ZFC</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-text-muted">Lean 4</span>
@@ -360,65 +628,24 @@ export function BacklinksPanel({ docId, backlinks, onNavigate, documentTitle }: 
 
         <div className="h-px bg-grid-line" />
 
-        <!-- 3. GRAPH 局部知识图谱 (SVG 矢量关系图) -->
+        <!-- 5. Tools -->
         <div>
-          <div className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted mb-4">Local Graph</div>
-          
-          <div className="h-28 bg-canvas border border-grid-line flex items-center justify-center relative overflow-hidden">
-            <svg className="absolute inset-0 w-full h-full" stroke="#E5E4DE" strokeWidth="1">
-              <line x1="130" y1="56" x2="60" y2="36" />
-              <line x1="130" y1="56" x2="200" y2="36" />
-              <line x1="130" y1="56" x2="130" y2="90" />
-            </svg>
-            <!-- 中心主节点 -->
-            <div className="absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-              <div className="w-3.5 h-3.5 bg-swiss-red border border-white"></div>
-            </div>
-            <!-- 辅节点 -->
-            <div className="absolute top-[20%] left-[20%] flex flex-col items-center"><div className="w-2.5 h-2.5 bg-gray-400"></div></div>
-            <div className="absolute top-[20%] right-[20%] flex flex-col items-center"><div className="w-2.5 h-2.5 bg-gray-400"></div></div>
-            <div className="absolute bottom-[10%] left-[50%] transform -translate-x-1/2 flex flex-col items-center"><div className="w-2.5 h-2.5 bg-gray-400"></div></div>
-          </div>
+          <div className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted mb-4">Tools</div>
+          <ul className="space-y-1.5 font-sys text-xs">
+            <li className="group flex justify-between items-center cursor-pointer p-1">
+              <span className="flex items-center gap-2"><span class="font-mono text-text-muted">⇢</span> Trace Origin</span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity text-swiss-red">→</span>
+            </li>
+          </ul>
         </div>
 
-        <div className="h-px bg-grid-line" />
-
-        <!-- 4. Backlinks 反向关联引用 (有引用时呈现) -->
-        <div>
-          <div className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted mb-4">
-            Linked References ({filteredBacklinks.length})
-          </div>
-          
-          {filteredBacklinks.length === 0 ? (
-            <div className="font-reading text-sm italic text-text-muted">No linked mentions yet.</div>
-          ) : (
-            <div className="space-y-1">
-              {filteredBacklinks.map((backlink) => (
-                <button
-                  type="button"
-                  key={backlink.id}
-                  onClick={() => onNavigate(backlink.sourceDocId)}
-                  className="w-full flex items-center justify-between py-2 border-b border-grid-line text-left group font-sys text-[13px] hover:text-swiss-red transition-colors"
-                >
-                  <span className="font-reading text-base leading-none text-text-main truncate group-hover:text-swiss-red">
-                    {backlink.targetTitle}
-                  </span>
-                  <ArrowRight className="w-3.5 h-3.5 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="h-px bg-grid-line" />
-
-        <!-- 5. Completeness 极细进度指示条 -->
+        <!-- 6. Progress -->
         <div className="pt-4 border-t border-grid-line">
           <div className="flex justify-between items-center font-mono text-[9px] text-text-muted uppercase tracking-widest mb-2">
             <span>Completeness</span>
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-swiss-red"></span>
-              <span className="text-text-main">80%</span>
+              <span className="text-black">80%</span>
             </span>
           </div>
           <div className="h-[2px] w-full bg-grid-line">
