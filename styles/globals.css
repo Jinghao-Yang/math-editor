@@ -6,60 +6,33 @@ nextjs-portal {
   display: none !important;
 }
 
-#__nextjs-devtools {
-  display: none !important;
-}
-
-body > div:nth-child(2) {
-  display: none !important;
-}
-
-body > [class*="dev"] {
-  display: none !important;
-}
-
-body > [class*="next"] {
-  display: none !important;
-}
-
 /* ============================================
-   MathSpace — exact copy from ui.txt
+   Axiom Neo-Swiss - Research OS Core Rules
    ============================================ */
 
 :root {
-  --math-bg: #F8F9FB;
-  --math-surface: #FFFFFF;
-  --math-border: #E5E7EB;
-  --math-brand: #5E6AD2;
-  --math-text: #111827;
-  --math-text-secondary: #6B7280;
-  --math-text-tertiary: #9CA3AF;
-  --math-hover: #F3F4F6;
-  --math-category-orange: #F97316;
-  --math-category-emerald: #10B981;
-  --math-category-blue: #3B82F6;
+  --bg-canvas: #FAF9F6;     /* 极温润的珍珠灰底色 */
+  --bg-surface: #FFFFFF;    /* 纯白 */
+  --text-main: #111111;     /* 墨黑 */
+  --text-muted: #8E8E88;    /* 辅助灰 */
+  --swiss-red: #E32636;     /* 瑞士红 */
+  --grid-line: #E8E7E1;     /* 极细网格线 */
+  --shadow-card: 4px 4px 0px rgba(17, 17, 17, 0.06);
 }
 
 @layer base {
   html {
-    color-scheme: light;
     scroll-behavior: smooth;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sys), sans-serif;
     font-size: 14px;
-    color: var(--math-text);
-  }
-
-  html.dark {
-    color-scheme: dark;
+    color: var(--text-main);
   }
 
   body {
-    background-color: var(--math-bg);
-    color: var(--math-text);
+    background-color: var(--bg-canvas);
+    color: var(--text-main);
     min-height: 100vh;
     overflow: hidden;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -70,70 +43,64 @@ body > [class*="next"] {
   }
 
   * {
-    border-color: var(--math-border);
+    border-radius: 0px !important; /* 遵循严格的瑞士国际主义直角 */
+    border-color: var(--grid-line) !important;
   }
 
   ::selection {
-    background: rgba(94, 106, 210, 0.20);
-    color: var(--math-brand);
+    background: rgba(227, 38, 54, 0.12);
+    color: var(--swiss-red);
   }
 }
 
-/* canvas-grid */
-.canvas-grid {
-  background-image:
-    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
-  background-size: 32px 32px;
+/* 极细结构线 */
+.hairline-r { border-right: 1px solid var(--grid-line); }
+.hairline-l { border-left: 1px solid var(--grid-line); }
+.hairline-b { border-bottom: 1px solid var(--grid-line); }
+.hairline-t { border-top: 1px solid var(--grid-line); }
+
+/* 物理卡片触感 */
+.brutal-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--text-main);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  cursor: pointer;
+}
+.brutal-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px rgba(17, 17, 17, 0.10);
 }
 
-/* object-card */
-.object-card {
-  background: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.02);
-  transition: all 0.2s ease;
+/* 卡片类别装饰色线 */
+.card-theorem { border-left: 4px solid var(--text-main) !important; }
+.card-definition { border-left: 4px solid var(--text-muted) !important; }
+.card-lemma { border-left: 4px solid var(--swiss-red) !important; }
+
+/* 学术级水平时间轨道 (Gantt) */
+.academic-track {
+  background: var(--bg-surface);
+  border: 1px solid var(--text-main);
+  padding: 0.5rem 1rem;
+  box-shadow: 2px 2px 0px rgba(17, 17, 17, 0.03);
+  transition: border-color 0.12s ease;
+}
+.academic-track:hover {
+  border-color: var(--swiss-red);
 }
 
-.object-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04), 0 12px 24px rgba(0, 0, 0, 0.04);
-  border-color: #D1D5DB;
-  transform: translateY(-2px);
+/* 阶段看板列 (Kanban) */
+.stage-column {
+  background: var(--bg-surface);
+  border: 1px solid var(--grid-line);
+  padding: 0.75rem;
+  min-height: 240px;
 }
-
-.object-card.selected {
-  border-color: #5E6AD2;
-  box-shadow: 0 0 0 1px #5E6AD2, 0 4px 12px rgba(94, 106, 210, 0.15);
-}
-
-/* ai-border */
-.ai-border {
-  position: relative;
-  background: #fff;
-  border-radius: 16px;
-}
-
-.ai-border::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  border-radius: 17px;
-  background: linear-gradient(135deg, #A8B1FF, #5E6AD2, #F472B6);
-  z-index: -1;
-  opacity: 0.5;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(12px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.animate-in {
-  animation: fadeIn 0.3s ease-out;
+.stage-card {
+  background: var(--bg-canvas);
+  border: 1px solid var(--grid-line);
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 12px;
+  cursor: grab;
 }

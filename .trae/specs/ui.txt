@@ -1,389 +1,433 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Axiom - Spatial Object Workspace</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+### 1. 替换左侧边栏布局：`components/plane/PlaneLayout.tsx`
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #F8F9FB; /* 极简浅灰底色 */
-            color: #111827;
-            overflow: hidden;
-        }
+完全采用你设计的 `AXIOM` 菜单架构，包含 `+ New` 常驻按钮和极简搜索框，去除了冗余的全局 `Views`。
 
-        /* 隐藏原生滚动条，保持界面整洁 */
-        ::-webkit-scrollbar { width: 0px; background: transparent; }
+```tsx
+"use client";
 
-        /* 吸收的灵感 1：显性的网格画布 (致敬 Muse / Affine / Heptabase) */
-        .canvas-grid {
-            background-image: 
-                linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
-            background-size: 32px 32px; /* 调整了网格密度使其更优雅 */
-        }
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useI18n } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import {
+  Inbox,
+  Clock,
+  Star,
+  Search,
+  Settings,
+  HelpCircle,
+  CheckSquare,
+  FileText,
+  PenTool,
+  Menu,
+} from "lucide-react";
+import { Button } from "@/components/tailwind/ui/button";
+import { SearchDialog } from "@/components/search/SearchDialog";
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/tailwind/ui/sheet";
 
-        /* 知识卡片对象样式 (Object Card) */
-        .object-card {
-            background: #FFFFFF;
-            border: 1px solid #E5E7EB;
-            border-radius: 16px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.02);
-            transition: all 0.2s ease;
-        }
-        .object-card:hover {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04), 0 12px 24px rgba(0, 0, 0, 0.04);
-            border-color: #D1D5DB;
-            transform: translateY(-2px);
-        }
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  index?: string;
+  activeDot?: boolean;
+}
 
-        /* 选中的卡片状态 */
-        .object-card.selected {
-            border-color: #5E6AD2;
-            box-shadow: 0 0 0 1px #5E6AD2, 0 4px 12px rgba(94, 106, 210, 0.15);
-        }
+interface NavGroup {
+  label: string;
+  index: string;
+  items: NavItem[];
+}
 
-        /* AI 渐变边框效果 */
-        .ai-border {
-            position: relative;
-            background: #fff;
-            border-radius: 16px;
-        }
-        .ai-border::before {
-            content: "";
-            position: absolute;
-            inset: -1px;
-            border-radius: 17px;
-            background: linear-gradient(135deg, #A8B1FF, #5E6AD2, #F472B6);
-            z-index: -1;
-            opacity: 0.5;
-        }
+export function PlaneLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
-        .border-subtle { border-color: #E5E7EB; }
-    </style>
-</head>
-<body class="h-screen w-screen flex antialiased selection:bg-[#5E6AD2]/20 selection:text-[#5E6AD2] text-[14px]">
+  const primaryItems: NavItem[] = [
+    { href: "/knowledge-base/inbox", label: "Inbox", icon: Inbox },
+    { href: "/knowledge-base/today", label: "Today", icon: Inbox, activeDot: true },
+    { href: "/knowledge-base/recent", label: "Recent", icon: Clock },
+    { href: "/knowledge-base/favorites", label: "Favorites", icon: Star },
+  ];
 
-    <!-- 左侧边栏 (Sidebar - 结构导航区) -->
-    <aside class="w-[260px] bg-white border-r border-subtle flex flex-col flex-shrink-0 z-20">
-        <!-- Logo & Workspace -->
-        <div class="h-16 flex items-center px-5 border-b border-subtle">
-            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-gray-800 to-black flex items-center justify-center text-white mr-3 shadow-md">
-                <i data-lucide="infinity" class="w-4 h-4"></i>
-            </div>
-            <span class="font-bold text-[16px] tracking-tight text-gray-900 flex-1">MathSpace</span>
+  const spaceItems: NavItem[] = [
+    { href: "/knowledge-base", label: "Project", index: "01", icon: Inbox },
+    { href: "/knowledge-base/mathematics", label: "Mathematics", index: "02", icon: Inbox },
+    { href: "/knowledge-base/personal", label: "Personal", index: "03", icon: Inbox },
+  ];
+
+  const knowledgeItems: NavItem[] = [
+    { href: "/knowledge-base/notes", label: "Notes", icon: PenTool },
+    { href: "/knowledge-base/documents", label: "Documents", icon: FileText },
+    { href: "/knowledge-base/inquiries", label: "Inquiries", icon: HelpCircle },
+    { href: "/knowledge-base/tasks", label: "Tasks", icon: CheckSquare },
+  ];
+
+  const isActive = (href: string) => {
+    if (href === "/knowledge-base") {
+      return pathname === "/knowledge-base";
+    }
+    return pathname.startsWith(href);
+  };
+
+  const handleCreateNew = () => {
+    setSearchOpen(true);
+  };
+
+  const renderNavItem = (item: NavItem) => {
+    const active = isActive(item.href);
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={cn(
+          "nav-item w-full flex items-center justify-between py-1.5 relative text-xs font-medium font-sys",
+          active ? "text-text-main font-semibold" : "text-text-muted hover:text-text-main"
+        )}
+      >
+        {item.activeDot && active && <div className="absolute -left-4 indicator-dot" />}
+        <span className="truncate">{item.label}</span>
+        {item.index && <span className="font-mono text-[10px] opacity-40">{item.index}</span>}
+      </Link>
+    );
+  };
+
+  return (
+    <div className="flex min-h-screen bg-canvas">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col w-[240px] bg-white hairline-r flex-shrink-0 z-20 h-screen fixed left-0 top-0 select-none">
+        {/* Brand Header */}
+        <div className="h-20 px-8 flex items-center justify-between hairline-b bg-white">
+          <span className="font-sys text-base font-bold tracking-widest text-text-main">AXIOM</span>
+          <span className="font-mono text-[9px] text-text-muted opacity-60">v0.6</span>
         </div>
 
-        <!-- 搜索与快捷指令 -->
-        <div class="px-4 py-4">
-            <button class="w-full flex items-center justify-between px-3 py-2 bg-[#F3F4F6] rounded-xl text-gray-500 hover:bg-gray-200 transition-colors group">
-                <div class="flex items-center gap-2"><i data-lucide="search" class="w-4 h-4"></i> <span class="text-sm">Search objects...</span></div>
-                <kbd class="text-[10px] font-['JetBrains_Mono'] bg-white px-1.5 py-0.5 rounded shadow-sm text-gray-400 group-hover:text-gray-600">⌘K</kbd>
+        <!-- Navigation Menu -->
+        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 text-xs text-text-muted font-medium">
+          <!-- + New Action -->
+          <div className="pb-2">
+            <button
+              type="button"
+              onClick={handleCreateNew}
+              className="w-full flex items-center justify-center gap-2 py-2 border border-text-main hover:bg-text-main hover:text-white text-text-main transition-all font-sys text-xs font-semibold"
+            >
+              + New
             </button>
-        </div>
+          </div>
 
-        <!-- 导航菜单 -->
-        <div class="flex-1 overflow-y-auto px-3 space-y-6 pb-6">
-            <!-- Workspaces -->
-            <div>
-                <div class="px-2 mb-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Workspace</div>
-                <div class="space-y-0.5">
-                    <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-gray-900 bg-[#F3F4F6] font-medium">
-                        <i data-lucide="layout-template" class="w-4 h-4 text-[#5E6AD2]"></i> Topology
-                    </button>
-                    <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
-                        <i data-lucide="function-square" class="w-4 h-4 text-gray-400"></i> Algebra
-                    </button>
-                    <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
-                        <i data-lucide="git-merge" class="w-4 h-4 text-gray-400"></i> Category Theory
-                    </button>
-                </div>
-            </div>
-
-            <!-- Library (Capacities 对象理念) -->
-            <div>
-                <div class="px-2 mb-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Library</div>
-                <div class="space-y-0.5">
-                    <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
-                        <i data-lucide="book" class="w-4 h-4 text-orange-500"></i> Definitions
-                    </button>
-                    <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
-                        <i data-lucide="award" class="w-4 h-4 text-emerald-500"></i> Theorems
-                    </button>
-                    <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
-                        <i data-lucide="pen-tool" class="w-4 h-4 text-blue-500"></i> Proofs
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 用户与设置 -->
-        <div class="p-4 border-t border-subtle">
-            <button class="w-full flex items-center gap-3 hover:bg-gray-50 p-1.5 rounded-lg transition-colors">
-                <img class="w-7 h-7 rounded-full bg-gray-200" src="https://api.dicebear.com/7.x/notionists/svg?seed=Prof" alt="Avatar">
-                <div class="text-left flex-1">
-                    <div class="text-sm font-medium text-gray-900">Dr. Alex</div>
-                    <div class="text-[11px] text-gray-500">Pro Plan</div>
-                </div>
-                <i data-lucide="settings" class="w-4 h-4 text-gray-400"></i>
+          <!-- Search Bar -->
+          <div className="pb-2">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="w-full flex items-center justify-between py-2 border-b border-grid-line hover:text-text-main transition-all group text-left"
+            >
+              <span className="flex items-center gap-2">
+                <Search className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100" />
+                Search
+              </span>
+              <kbd className="font-mono text-[9px] opacity-40">⌘K</kbd>
             </button>
-        </div>
-    </aside>
+          </div>
 
-    <!-- 中间主工作区 (Canvas Engine) -->
-    <main class="flex-1 flex flex-col relative canvas-grid z-0">
+          <!-- Standard States -->
+          <div className="space-y-2.5">
+            {primaryItems.map(renderNavItem)}
+          </div>
+
+          <div className="h-px bg-grid-line" />
+
+          <!-- Spaces Section -->
+          <div>
+            <div className="text-[9px] uppercase tracking-widest text-text-muted opacity-50 mb-3">Space</div>
+            <div className="space-y-2.5">
+              {spaceItems.map(renderNavItem)}
+            </div>
+          </div>
+
+          <div className="h-px bg-grid-line" />
+
+          <!-- Knowledge Section -->
+          <div>
+            <div className="text-[9px] uppercase tracking-widest text-text-muted opacity-50 mb-3">Knowledge</div>
+            <div className="space-y-2.5">
+              {knowledgeItems.map(renderNavItem)}
+            </div>
+          </div>
+
+          <div className="h-px bg-grid-line" />
+
+          <!-- Settings -->
+          <div>
+            <div
+              onClick={() => router.push("/settings")}
+              className="nav-item flex items-center gap-2 py-1 cursor-pointer hover:text-text-main"
+            >
+              <Settings className="w-3.5 h-3.5 opacity-40" />
+              Settings
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content (Offset left sidebar width) */}
+      <div className="flex-1 flex flex-col min-w-0 md:ml-[240px]">
+        {children}
+      </div>
+
+      <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
+    </div>
+  );
+}
+```
+
+---
+
+### 2. 替换中控分屏布局：`components/plane/KnowledgeBaseLayout.tsx`
+
+重组分屏方案，左侧为流动的书写画布，右侧内置折叠的 `Context Panel` 检查器。
+
+```tsx
+"use client";
+
+import type React from "react";
+import { ArrowLeft, FileText, ChevronRight } from "lucide-react";
+import { Button } from "@/components/tailwind/ui/button";
+import Editor from "@/components/tailwind/editor";
+import { useI18n } from "@/lib/i18n";
+import { BacklinksPanel } from "./links/BacklinksPanel";
+
+interface KnowledgeBaseLayoutProps {
+  children: React.ReactNode;
+  mode: "browse" | "edit";
+  documentId: string | null;
+  onBack: () => void;
+}
+
+export function KnowledgeBaseLayout({
+  children,
+  mode,
+  documentId,
+  onBack,
+}: KnowledgeBaseLayoutProps) {
+  const { t } = useI18n();
+
+  if (mode === "edit" && documentId) {
+    return (
+      <div className="flex h-full min-h-screen w-full flex-col overflow-hidden bg-canvas">
+        <!-- 顶栏：学术级极简坐标指示 -->
+        <div className="flex h-20 items-center justify-between bg-canvas px-16 z-10 border-b border-grid-line shrink-0">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-text-muted hover:text-text-main font-sys text-[11px] uppercase tracking-widest rounded-none p-0 bg-transparent hover:bg-transparent"
+              onClick={onBack}
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              {t("knowledgeBase.backToList")}
+            </Button>
+            <span className="font-serif italic text-sm text-grid-line mx-2">/</span>
+            <div className="flex items-center gap-1.5 font-sys text-[11px] uppercase tracking-widest text-text-main">
+              <FileText className="h-3.5 w-3.5" />
+              <span>{t("knowledgeBase.editingDocument")}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 极简分屏：左侧编辑，右侧检查器 -->
+        <div class="flex-1 flex h-full overflow-hidden">
+          <!-- 左侧写作画布 -->
+          <div className="flex-1 overflow-auto px-16 py-12 flex justify-center">
+            <div className="w-full max-w-[850px]">
+              <Editor documentId={documentId} />
+            </div>
+          </div>
+
+          <!-- 右侧 Context Panel -->
+          <aside className="w-[300px] bg-white hairline-l flex flex-col shrink-0 select-none h-full overflow-hidden hidden lg:flex">
+            <BacklinksPanel 
+              docId={documentId} 
+              backlinks={[]} 
+              onNavigate={() => {}} 
+              documentTitle={t("knowledgeBase.currentDocument")}
+            />
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full min-h-screen w-full flex-col overflow-hidden bg-canvas">
+      <div className="min-h-0 flex-1 overflow-auto">
+        {children}
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+### 3. 替换右侧上下文检查器：`components/plane/links/BacklinksPanel.tsx`
+
+重组检查器。由上自下依次展示 **Structure（逻辑符结构树）**、**Attributes（双栏属性）**、**Local Graph（SVG 局部图谱）** 以及最下方的 **Completeness（2px 进度条）**。
+
+```tsx
+"use client";
+
+import { useMemo } from 'react';
+import { FileText, ArrowRight } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
+
+interface Backlink {
+  id: string;
+  sourceDocId: string;
+  targetDocId: string;
+  targetTitle: string;
+}
+
+interface BacklinksPanelProps {
+  docId: string;
+  backlinks: Backlink[];
+  onNavigate: (docId: string) => void;
+  documentTitle?: string;
+}
+
+export function BacklinksPanel({ docId, backlinks, onNavigate, documentTitle }: BacklinksPanelProps) {
+  const { t } = useI18n();
+
+  const filteredBacklinks = useMemo(
+    () => backlinks.filter((link) => link.targetDocId === docId),
+    [backlinks, docId]
+  );
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden bg-white">
+      <!-- 检查器头部 -->
+      <div className="h-20 px-6 flex items-center justify-between border-b border-grid-line shrink-0">
+        <span className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted">Context Panel</span>
+        <span className="font-mono text-[9px] text-text-muted">active</span>
+      </div>
+
+      <!-- 内容轴 -->
+      <div className="flex-1 overflow-y-auto px-6 py-8 space-y-10">
         
-        <!-- 顶部工具栏 (Header) -->
-        <header class="h-16 bg-white/80 backdrop-blur-md border-b border-subtle flex items-center justify-between px-6 z-10 sticky top-0 shadow-sm">
-            <!-- 标题区 -->
-            <div class="flex items-center gap-3">
-                <div class="p-1.5 bg-[#F3F4F6] rounded-lg cursor-pointer hover:bg-gray-200 text-gray-600"><i data-lucide="panel-left" class="w-4 h-4"></i></div>
-                <h1 class="text-[18px] font-semibold text-gray-900">Topology Workspace</h1>
+        <!-- 1. Structure 树 -->
+        <div>
+          <div className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted mb-4">Structure</div>
+          <div className="font-mono text-[11px] space-y-2 leading-relaxed">
+            <div className="flex items-center gap-2 text-text-muted hover:text-text-main transition-colors cursor-pointer">
+              <span>⊤</span> General Topology
             </div>
-
-            <!-- 视图与对象操作 -->
-            <div class="flex items-center gap-2 bg-[#F3F4F6] p-1 rounded-xl border border-gray-200">
-                <button class="px-3 py-1.5 text-xs rounded-lg bg-white text-gray-900 font-medium shadow-sm border border-gray-100 flex items-center gap-1.5">
-                    <i data-lucide="mouse-pointer-square" class="w-3.5 h-3.5"></i> Canvas
-                </button>
-                <button class="px-3 py-1.5 text-xs rounded-lg text-gray-500 hover:text-gray-900 font-medium flex items-center gap-1.5 transition-colors">
-                    <i data-lucide="network" class="w-3.5 h-3.5"></i> Graph
-                </button>
-                <div class="w-px h-4 bg-gray-300 mx-1"></div>
-                <button class="px-3 py-1.5 text-xs rounded-lg text-[#5E6AD2] hover:bg-indigo-50 font-medium flex items-center gap-1.5 transition-colors">
-                    <i data-lucide="plus" class="w-4 h-4"></i> New Object
-                </button>
+            <div className="flex items-center gap-2 text-text-main font-semibold ml-4">
+              <span className="text-swiss-red font-bold">·</span> Compact Space
             </div>
-        </header>
-
-        <!-- 画布内容区 -->
-        <div class="flex-1 overflow-y-auto p-8 relative">
-            
-            <div class="max-w-[1000px] mx-auto space-y-10 pb-32">
-                
-                <!-- 简介文本块 (Craft / Affine 风格文档流) -->
-                <div class="bg-white/60 backdrop-blur-sm border border-white p-6 rounded-2xl shadow-sm text-gray-600 text-[15px] leading-relaxed">
-                    <strong class="text-gray-900 text-lg">General Topology Overview</strong><br>
-                    This space maps the foundational structures of topological spaces. It bridges the intuitive notion of "closeness" without relying on strict metrics. Below are the key objects and our current research tasks.
-                </div>
-
-                <!-- 吸收的灵感 2：知识对象网格 (Object Grid) -->
-                <div>
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                            <i data-lucide="box" class="w-4 h-4 text-gray-400"></i> Core Objects
-                        </h2>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5">
-                        
-                        <!-- 卡片 1 (当前选中状态) -->
-                        <div class="object-card selected p-5 cursor-pointer relative group">
-                            <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button class="p-1 hover:bg-gray-100 rounded text-gray-400"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
-                            </div>
-                            <div class="text-[11px] font-bold text-orange-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                <i data-lucide="book" class="w-3.5 h-3.5"></i> Definition
-                            </div>
-                            <h3 class="text-[20px] font-bold text-gray-900 mb-3 tracking-tight">Compact Space</h3>
-                            <p class="text-gray-600 text-[14px] leading-relaxed mb-5">
-                                A topological space in which every open cover admits a finite subcover. Essential for generalizing properties of closed and bounded intervals.
-                            </p>
-                            <div class="flex flex-wrap gap-2">
-                                <span class="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-[11px] font-medium border border-gray-200">topology</span>
-                                <span class="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-[11px] font-medium border border-gray-200">compactness</span>
-                            </div>
-                        </div>
-
-                        <!-- 卡片 2 -->
-                        <div class="object-card p-5 cursor-pointer relative group">
-                            <div class="text-[11px] font-bold text-emerald-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                <i data-lucide="award" class="w-3.5 h-3.5"></i> Theorem
-                            </div>
-                            <h3 class="text-[20px] font-bold text-gray-900 mb-3 tracking-tight">Heine–Borel</h3>
-                            <p class="text-gray-600 text-[14px] leading-relaxed mb-5">
-                                A subset of Euclidean space Rⁿ is closed and bounded if and only if it is compact.
-                            </p>
-                            <div class="flex flex-wrap gap-2">
-                                <span class="px-2.5 py-1 bg-indigo-50 text-[#5E6AD2] rounded-full text-[11px] font-medium border border-indigo-100 flex items-center gap-1"><i data-lucide="link" class="w-3 h-3"></i> Related to Compact Space</span>
-                            </div>
-                        </div>
-
-                        <!-- 卡片 3 -->
-                        <div class="object-card p-5 cursor-pointer relative group">
-                            <div class="text-[11px] font-bold text-blue-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                <i data-lucide="pen-tool" class="w-3.5 h-3.5"></i> Research Note
-                            </div>
-                            <h3 class="text-[20px] font-bold text-gray-900 mb-3 tracking-tight">Proper Maps</h3>
-                            <p class="text-gray-600 text-[14px] leading-relaxed">
-                                Compactness can be recovered through properness. A map between spaces is proper if preimages of compact sets are compact.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 结合点 3：不可或缺的 Kanban 板块 (Linear 风格嵌入式看板) -->
-                <div class="pt-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                            <i data-lucide="kanban" class="w-4 h-4 text-gray-400"></i> Research Tasks
-                        </h2>
-                        <button class="text-xs font-medium text-[#5E6AD2] hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors">Add Task</button>
-                    </div>
-
-                    <!-- 极简看板 (Linear Light Mode) -->
-                    <div class="bg-white border border-subtle rounded-2xl p-4 shadow-sm flex gap-4 overflow-x-auto">
-                        <!-- TODO Column -->
-                        <div class="w-72 flex-shrink-0 flex flex-col">
-                            <div class="flex items-center justify-between mb-3 px-1">
-                                <div class="flex items-center gap-2 text-xs font-bold text-gray-500"><div class="w-2 h-2 rounded-full border-2 border-gray-400"></div> TODO <span class="bg-gray-100 text-gray-400 px-1.5 rounded-md text-[10px]">1</span></div>
-                            </div>
-                            <div class="bg-white border border-gray-200 p-3.5 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.05)] cursor-pointer hover:border-gray-300 transition-colors">
-                                <div class="text-gray-900 font-medium text-sm mb-2">Write proof for Tychonoff's theorem</div>
-                                <div class="flex items-center justify-between mt-3">
-                                    <div class="text-[10px] font-['JetBrains_Mono'] text-gray-400">MATH-101</div>
-                                    <img class="w-5 h-5 rounded-full border border-gray-100" src="https://api.dicebear.com/7.x/notionists/svg?seed=Prof">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- IN PROGRESS Column -->
-                        <div class="w-72 flex-shrink-0 flex flex-col">
-                            <div class="flex items-center justify-between mb-3 px-1">
-                                <div class="flex items-center gap-2 text-xs font-bold text-gray-500"><div class="w-2 h-2 rounded-full border-2 border-orange-500 bg-orange-100"></div> IN PROGRESS <span class="bg-gray-100 text-gray-400 px-1.5 rounded-md text-[10px]">1</span></div>
-                            </div>
-                            <div class="bg-white border border-orange-200 p-3.5 rounded-xl shadow-[0_2px_8px_rgba(249,115,22,0.1)] cursor-pointer">
-                                <div class="text-gray-900 font-medium text-sm mb-2">Review Heine-Borel applicability</div>
-                                <div class="w-full bg-gray-100 h-1.5 rounded-full mb-3 overflow-hidden"><div class="bg-orange-500 w-[60%] h-full rounded-full"></div></div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex gap-1.5">
-                                        <span class="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] rounded font-medium">Review</span>
-                                    </div>
-                                    <div class="text-[10px] font-['JetBrains_Mono'] text-gray-400">MATH-092</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+            <div className="flex items-center gap-2 text-text-muted ml-8">
+              <span>⊢</span> Heine–Borel
             </div>
-        </div>
-    </main>
-
-    <!-- 右侧检查器 (Inspector & AI Hub - Reflect/NotionAI 风格) -->
-    <aside class="w-[320px] bg-white border-l border-subtle flex flex-col flex-shrink-0 z-20 shadow-[-4px_0_24px_rgba(0,0,0,0.02)]">
-        
-        <!-- 面板头部 -->
-        <div class="h-16 flex items-center px-5 border-b border-subtle bg-gray-50/50">
-            <i data-lucide="info" class="w-4 h-4 text-gray-400 mr-2"></i>
-            <span class="font-semibold text-[14px] text-gray-700">Object Inspector</span>
+            <div className="flex items-center gap-2 text-text-muted ml-8">
+              <span>⊢</span> Tychonoff's Theorem
+            </div>
+          </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-5 space-y-8">
-            
-            <!-- 当前选中对象缩略信息 -->
-            <div>
-                <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">Selection</div>
-                <div class="flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0 border border-orange-100">
-                        <i data-lucide="book" class="w-5 h-5 text-orange-500"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-gray-900 font-bold text-[15px] leading-tight mb-1">Compact Space</h3>
-                        <p class="text-gray-500 text-xs">Definition • Updated 2h ago</p>
-                    </div>
-                </div>
+        <div className="h-px bg-grid-line" />
+
+        <!-- 2. Attributes 双栏列表 -->
+        <div>
+          <div className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted mb-4">Attributes</div>
+          <div className="space-y-3 font-mono text-[11px]">
+            <div className="flex justify-between items-center border-b border-grid-line pb-1.5">
+              <span className="text-text-muted">Category</span>
+              <span className="bg-gray-100 px-2 py-0.5 border border-grid-line">Point-Set</span>
             </div>
-
-            <!-- 元数据 (Metadata) -->
-            <div class="space-y-4">
-                <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Properties</div>
-                
-                <div class="flex items-center justify-between group cursor-pointer">
-                    <span class="text-[13px] text-gray-500 flex items-center gap-2"><i data-lucide="folder" class="w-4 h-4"></i> Parent</span>
-                    <span class="text-[13px] font-medium text-gray-900 bg-gray-100 px-2 py-0.5 rounded hover:bg-gray-200">Topology</span>
-                </div>
-                
-                <div class="flex items-start justify-between group cursor-pointer">
-                    <span class="text-[13px] text-gray-500 flex items-center gap-2 mt-1"><i data-lucide="link-2" class="w-4 h-4"></i> Relations</span>
-                    <div class="text-right flex flex-col gap-1.5 items-end">
-                        <span class="text-[12px] font-medium text-[#5E6AD2] bg-indigo-50 px-2 py-1 rounded border border-indigo-100">Heine–Borel</span>
-                        <span class="text-[12px] font-medium text-[#5E6AD2] bg-indigo-50 px-2 py-1 rounded border border-indigo-100">Proper Map</span>
-                    </div>
-                </div>
+            <div className="flex justify-between items-center border-b border-grid-line pb-1.5">
+              <span className="text-text-muted">Foundation</span>
+              <span class="bg-gray-100 px-2 py-0.5 border border-grid-line">ZFC</span>
             </div>
-
-            <!-- 吸收的灵感 4：核心 AI 魔法盒 (AI Actions Box) -->
-            <div class="ai-border p-[1px] mt-4 shadow-sm">
-                <div class="bg-white rounded-[15px] p-4 h-full">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="w-6 h-6 rounded-md bg-gradient-to-r from-[#A8B1FF] to-[#5E6AD2] flex items-center justify-center">
-                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-white"></i>
-                        </div>
-                        <span class="text-[13px] font-bold text-gray-900">AI Assistant</span>
-                    </div>
-
-                    <div class="space-y-1">
-                        <!-- AI 动作按钮 -->
-                        <button class="w-full flex items-center justify-between p-2.5 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-[#5E6AD2] transition-colors group border border-transparent hover:border-indigo-100">
-                            <div class="flex items-center gap-2.5 text-[13px] font-medium">
-                                <i data-lucide="message-square" class="w-4 h-4 text-gray-400 group-hover:text-[#5E6AD2]"></i> Explain concept
-                            </div>
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-300 group-hover:text-[#5E6AD2]"></i>
-                        </button>
-                        
-                        <button class="w-full flex items-center justify-between p-2.5 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-[#5E6AD2] transition-colors group border border-transparent hover:border-indigo-100">
-                            <div class="flex items-center gap-2.5 text-[13px] font-medium">
-                                <i data-lucide="test-tube" class="w-4 h-4 text-gray-400 group-hover:text-[#5E6AD2]"></i> Generate Example
-                            </div>
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-300 group-hover:text-[#5E6AD2]"></i>
-                        </button>
-                        
-                        <button class="w-full flex items-center justify-between p-2.5 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-[#5E6AD2] transition-colors group border border-transparent hover:border-indigo-100">
-                            <div class="flex items-center gap-2.5 text-[13px] font-medium">
-                                <i data-lucide="git-commit" class="w-4 h-4 text-gray-400 group-hover:text-[#5E6AD2]"></i> Create Diagram
-                            </div>
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-300 group-hover:text-[#5E6AD2]"></i>
-                        </button>
-
-                        <button class="w-full flex items-center justify-between p-2.5 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-[#5E6AD2] transition-colors group border border-transparent hover:border-indigo-100">
-                            <div class="flex items-center gap-2.5 text-[13px] font-medium">
-                                <i data-lucide="search-check" class="w-4 h-4 text-gray-400 group-hover:text-[#5E6AD2]"></i> Find Related Objects
-                            </div>
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-300 group-hover:text-[#5E6AD2]"></i>
-                        </button>
-                    </div>
-                </div>
+            <div className="flex justify-between items-center">
+              <span className="text-text-muted">Lean 4</span>
+              <span className="text-blue-600 hover:text-blue-800 cursor-pointer">Unverified ↗</span>
             </div>
-            
-            <!-- Graph 缩略预览 -->
-            <div class="pt-4 border-t border-subtle">
-                <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Local Graph</div>
-                <div class="h-32 bg-[#F8F9FB] rounded-xl border border-gray-200 relative overflow-hidden cursor-pointer hover:border-indigo-300 transition-colors">
-                    <!-- 模拟节点连线 -->
-                    <svg class="absolute inset-0 w-full h-full" stroke="#D1D5DB" stroke-width="1.5">
-                        <line x1="50%" y1="40%" x2="25%" y2="70%" />
-                        <line x1="50%" y1="40%" x2="75%" y2="65%" />
-                    </svg>
-                    <!-- 主节点 -->
-                    <div class="w-4 h-4 rounded-full bg-orange-500 absolute top-[40%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 shadow-[0_0_0_4px_rgba(249,115,22,0.2)]"></div>
-                    <!-- 子节点 -->
-                    <div class="w-3 h-3 rounded-full bg-emerald-500 absolute top-[70%] left-[25%] transform -translate-x-1/2 -translate-y-1/2"></div>
-                    <div class="w-3 h-3 rounded-full bg-blue-500 absolute top-[65%] left-[75%] transform -translate-x-1/2 -translate-y-1/2"></div>
-                </div>
-            </div>
-
+          </div>
         </div>
-    </aside>
 
-    <script>
-        // 渲染图标
-        lucide.createIcons();
-    </script>
-</body>
-</html>
+        <div className="h-px bg-grid-line" />
+
+        <!-- 3. GRAPH 局部知识图谱 (SVG 矢量关系图) -->
+        <div>
+          <div className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted mb-4">Local Graph</div>
+          
+          <div className="h-28 bg-canvas border border-grid-line flex items-center justify-center relative overflow-hidden">
+            <svg className="absolute inset-0 w-full h-full" stroke="#E5E4DE" strokeWidth="1">
+              <line x1="130" y1="56" x2="60" y2="36" />
+              <line x1="130" y1="56" x2="200" y2="36" />
+              <line x1="130" y1="56" x2="130" y2="90" />
+            </svg>
+            <!-- 中心主节点 -->
+            <div className="absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+              <div className="w-3.5 h-3.5 bg-swiss-red border border-white"></div>
+            </div>
+            <!-- 辅节点 -->
+            <div className="absolute top-[20%] left-[20%] flex flex-col items-center"><div className="w-2.5 h-2.5 bg-gray-400"></div></div>
+            <div className="absolute top-[20%] right-[20%] flex flex-col items-center"><div className="w-2.5 h-2.5 bg-gray-400"></div></div>
+            <div className="absolute bottom-[10%] left-[50%] transform -translate-x-1/2 flex flex-col items-center"><div className="w-2.5 h-2.5 bg-gray-400"></div></div>
+          </div>
+        </div>
+
+        <div className="h-px bg-grid-line" />
+
+        <!-- 4. Backlinks 反向关联引用 (有引用时呈现) -->
+        <div>
+          <div className="font-sys text-[10px] uppercase tracking-[0.15em] text-text-muted mb-4">
+            Linked References ({filteredBacklinks.length})
+          </div>
+          
+          {filteredBacklinks.length === 0 ? (
+            <div className="font-reading text-sm italic text-text-muted">No linked mentions yet.</div>
+          ) : (
+            <div className="space-y-1">
+              {filteredBacklinks.map((backlink) => (
+                <button
+                  type="button"
+                  key={backlink.id}
+                  onClick={() => onNavigate(backlink.sourceDocId)}
+                  className="w-full flex items-center justify-between py-2 border-b border-grid-line text-left group font-sys text-[13px] hover:text-swiss-red transition-colors"
+                >
+                  <span className="font-reading text-base leading-none text-text-main truncate group-hover:text-swiss-red">
+                    {backlink.targetTitle}
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="h-px bg-grid-line" />
+
+        <!-- 5. Completeness 极细进度指示条 -->
+        <div className="pt-4 border-t border-grid-line">
+          <div className="flex justify-between items-center font-mono text-[9px] text-text-muted uppercase tracking-widest mb-2">
+            <span>Completeness</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-swiss-red"></span>
+              <span className="text-text-main">80%</span>
+            </span>
+          </div>
+          <div className="h-[2px] w-full bg-grid-line">
+            <div className="h-full w-4/5 bg-text-main"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+```

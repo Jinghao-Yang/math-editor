@@ -8,6 +8,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { DEFAULT_LOCALE, I18N_COOKIE_NAME, normalizeLocale, dictionaries } from "@/lib/i18n";
+import { newsreader, spaceGrotesk, jetbrainsMono } from "@/styles/fonts";
 import Providers from "./providers";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -36,7 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#FAF9F6",
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -44,8 +45,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const initialLocale = normalizeLocale(cookieStore.get(I18N_COOKIE_NAME)?.value) ?? DEFAULT_LOCALE;
 
   return (
-    <html lang={initialLocale} suppressHydrationWarning>
-      <body>
+    <html 
+      lang={initialLocale} 
+      className={`${newsreader.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`} 
+      suppressHydrationWarning
+    >
+      <body className="font-sys bg-[#FAF9F6] text-[#111111] antialiased">
         <Providers initialLocale={initialLocale}>{children}</Providers>
       </body>
     </html>

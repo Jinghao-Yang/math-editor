@@ -1,8 +1,0 @@
-- [x] 配色已从 slate 切换为 zinc，globals.css 和 tailwind.config.ts 已更新
-- [x] 官方 shadcn 组件已写入并替换手写版本
-- [x] 新增 select、tabs、sheet、avatar、skeleton、table、toggle、switch 组件可用
-- [x] 原生 `<select>` 已替换为 shadcn Select
-- [x] 移动端菜单已使用 Sheet 组件
-- [x] 自定义圆角/间距/阴影令牌与 shadcn 组件兼容
-- [x] 深浅色主题下视觉效果一致
-- [x] typecheck 与 lint（19 个文件）全部通过

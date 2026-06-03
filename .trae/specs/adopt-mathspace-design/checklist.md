@@ -1,8 +1,0 @@
-- [x] globals.css 已完全重写，匹配 MathSpace 设计
-- [x] tailwind.config.ts 颜色/圆角/阴影已对齐
-- [x] Inter + JetBrains Mono 字体已加载
-- [x] Sidebar 采用干净白底分组导航
-- [x] 文档卡片采用 object-card 风格
-- [x] 看板采用 Linear 极简风格
-- [x] Topbar 毛玻璃效果
-- [x] typecheck + lint 通过

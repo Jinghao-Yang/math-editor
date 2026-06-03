@@ -12,16 +12,17 @@ const config = {
   theme: {
     extend: {
       colors: {
-        "math-bg": "#F8F9FB",
-        "math-surface": "#FFFFFF",
-        "math-border": "#E5E7EB",
-        "math-brand": "#5E6AD2",
-        "math-text": "#111827",
-        "math-text-secondary": "#6B7280",
-        "math-hover": "#F3F4F6",
-        "math-orange": "#F97316",
-        "math-emerald": "#10B981",
-        "math-blue": "#3B82F6",
+        canvas: "var(--bg-canvas)",
+        surface: "var(--bg-surface)",
+        "text-main": "var(--text-main)",
+        "text-muted": "var(--text-muted)",
+        "swiss-red": "var(--swiss-red)",
+        "grid-line": "var(--grid-line)",
+      },
+      fontFamily: {
+        sys: ["var(--font-sys)", "sans-serif"],
+        reading: ["var(--font-reading)", "serif"],
+        mono: ["var(--font-mono)", "monospace"],
       },
     },
   },
