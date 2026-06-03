@@ -3,85 +3,88 @@ import { EditorBubbleItem, useEditor } from "@/lib/editor-core";
 
 import { Button } from "@/components/tailwind/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/tailwind/ui/popover";
+import { useI18n } from "@/lib/i18n";
+import { type TranslationKey } from "@/lib/i18n";
+
 export interface BubbleColorMenuItem {
-  name: string;
+  nameKey: TranslationKey;
   color: string;
 }
 
 const TEXT_COLORS: BubbleColorMenuItem[] = [
   {
-    name: "Default",
+    nameKey: "selectors.default" as const,
     color: "var(--novel-black)",
   },
   {
-    name: "Purple",
+    nameKey: "selectors.purple" as const,
     color: "#9333EA",
   },
   {
-    name: "Red",
+    nameKey: "selectors.red" as const,
     color: "#E00000",
   },
   {
-    name: "Yellow",
+    nameKey: "selectors.yellow" as const,
     color: "#EAB308",
   },
   {
-    name: "Blue",
+    nameKey: "selectors.blue" as const,
     color: "#2563EB",
   },
   {
-    name: "Green",
+    nameKey: "selectors.green" as const,
     color: "#008A00",
   },
   {
-    name: "Orange",
+    nameKey: "selectors.orange" as const,
     color: "#FFA500",
   },
   {
-    name: "Pink",
+    nameKey: "selectors.pink" as const,
     color: "#BA4081",
   },
   {
-    name: "Gray",
+    nameKey: "selectors.gray" as const,
     color: "#A8A29E",
   },
 ];
 
 const HIGHLIGHT_COLORS: BubbleColorMenuItem[] = [
   {
-    name: "Default",
+    nameKey: "selectors.default" as const,
     color: "var(--novel-highlight-default)",
   },
   {
-    name: "Purple",
+    nameKey: "selectors.purple" as const,
     color: "var(--novel-highlight-purple)",
   },
   {
-    name: "Red",
+    nameKey: "selectors.red" as const,
     color: "var(--novel-highlight-red)",
   },
   {
-    name: "Yellow",
+    nameKey: "selectors.yellow" as const,
     color: "var(--novel-highlight-yellow)",
   },
   {
-    name: "Blue",
+    nameKey: "selectors.blue" as const,
     color: "var(--novel-highlight-blue)",
   },
   {
-    name: "Green",
+    nameKey: "selectors.green" as const,
     color: "var(--novel-highlight-green)",
   },
   {
-    name: "Orange",
+    nameKey: "selectors.orange" as const,
     color: "var(--novel-highlight-orange)",
   },
   {
-    name: "Pink",
+    nameKey: "selectors.pink" as const,
     color: "var(--novel-highlight-pink)",
   },
   {
-    name: "Gray",
+    nameKey: "selectors.gray" as const,
     color: "var(--novel-highlight-gray)",
   },
 ];
@@ -93,6 +96,7 @@ interface ColorSelectorProps {
 
 export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
   const { editor } = useEditor();
+  const { t } = useI18n();
 
   if (!editor) return null;
   const activeColorItem = TEXT_COLORS.find(({ color }) => editor.isActive("textStyle", { color }));
@@ -122,52 +126,61 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
         align="start"
       >
         <div className="flex flex-col">
-          <div className="my-1 px-2 text-sm font-semibold text-muted-foreground">Color</div>
-          {TEXT_COLORS.map(({ name, color }) => (
-            <EditorBubbleItem
-              key={name}
-              onSelect={() => {
-                editor.commands.unsetColor();
-                name !== "Default" &&
-                  editor
-                    .chain()
-                    .focus()
-                    .setColor(color || "")
-                    .run();
-                onOpenChange(false);
-              }}
-              className="flex cursor-pointer items-center justify-between px-2 py-1 text-sm hover:bg-accent"
-            >
-              <div className="flex items-center gap-2">
-                <div className="rounded-sm border px-2 py-px font-medium" style={{ color }}>
-                  A
+          <div className="my-1 px-2 text-sm font-semibold text-muted-foreground">{t("selectors.color")}</div>
+          {TEXT_COLORS.map(({ nameKey, color }) => {
+            const isDefault = nameKey === "selectors.default";
+            return (
+              <EditorBubbleItem
+                key={nameKey}
+                onSelect={() => {
+                  editor.commands.unsetColor();
+                  if (!isDefault) {
+                    editor
+                      .chain()
+                      .focus()
+                      .setColor(color || "")
+                      .run();
+                  }
+                  onOpenChange(false);
+                }}
+                className="flex cursor-pointer items-center justify-between px-2 py-1 text-sm hover:bg-accent"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="rounded-sm border px-2 py-px font-medium" style={{ color }}>
+                    A
+                  </div>
+                  <span>{t(nameKey)}</span>
                 </div>
-                <span>{name}</span>
-              </div>
-            </EditorBubbleItem>
-          ))}
+              </EditorBubbleItem>
+            );
+          })}
         </div>
         <div>
-          <div className="my-1 px-2 text-sm font-semibold text-muted-foreground">Background</div>
-          {HIGHLIGHT_COLORS.map(({ name, color }) => (
-            <EditorBubbleItem
-              key={name}
-              onSelect={() => {
-                editor.commands.unsetHighlight();
-                name !== "Default" && editor.chain().focus().setHighlight({ color }).run();
-                onOpenChange(false);
-              }}
-              className="flex cursor-pointer items-center justify-between px-2 py-1 text-sm hover:bg-accent"
-            >
-              <div className="flex items-center gap-2">
-                <div className="rounded-sm border px-2 py-px font-medium" style={{ backgroundColor: color }}>
-                  A
+          <div className="my-1 px-2 text-sm font-semibold text-muted-foreground">{t("selectors.background")}</div>
+          {HIGHLIGHT_COLORS.map(({ nameKey, color }) => {
+            const isDefault = nameKey === "selectors.default";
+            return (
+              <EditorBubbleItem
+                key={nameKey}
+                onSelect={() => {
+                  editor.commands.unsetHighlight();
+                  if (!isDefault) {
+                    editor.chain().focus().setHighlight({ color }).run();
+                  }
+                  onOpenChange(false);
+                }}
+                className="flex cursor-pointer items-center justify-between px-2 py-1 text-sm hover:bg-accent"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="rounded-sm border px-2 py-px font-medium" style={{ backgroundColor: color }}>
+                    A
+                  </div>
+                  <span>{t(nameKey)}</span>
                 </div>
-                <span>{name}</span>
-              </div>
-              {editor.isActive("highlight", { color }) && <Check className="h-4 w-4" />}
-            </EditorBubbleItem>
-          ))}
+                {editor.isActive("highlight", { color }) && <Check className="h-4 w-4" />}
+              </EditorBubbleItem>
+            );
+          })}
         </div>
       </PopoverContent>
     </Popover>

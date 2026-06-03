@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/tailwind/ui/popover";
 import { getAllProjects, queryData, transactData } from "@/lib/store/db";
+import { useI18n } from "@/lib/i18n";
 
 interface DocumentAssociationProps {
   documentId: string;
@@ -40,6 +41,7 @@ export function DocumentAssociation({ documentId, onAssociationChange }: Documen
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [currentProjectName, setCurrentProjectName] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
 
   const loadData = useCallback(() => {
     const allProjects = getAllProjects() as ProjectItem[];
@@ -97,7 +99,7 @@ export function DocumentAssociation({ documentId, onAssociationChange }: Documen
             <Unlink className="h-3.5 w-3.5" />
           )}
           <span className="max-w-[120px] truncate">
-            {currentProjectName || "Associate"}
+            {currentProjectName || t("project.associate")}
           </span>
         </Button>
       </PopoverTrigger>
@@ -105,25 +107,27 @@ export function DocumentAssociation({ documentId, onAssociationChange }: Documen
         <div className="space-y-1">
           {currentProjectId && (
             <button
+              type="button"
               onClick={() => handleAssociate(null)}
               className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
-              <span>Remove association</span>
+              <span>{t("project.removeAssociation")}</span>
               <Unlink className="h-3.5 w-3.5" />
             </button>
           )}
           {projects.length === 0 ? (
             <div className="px-2 py-3 text-center text-sm text-muted-foreground">
-              No projects available
+              {t("project.noProjectsAvailable")}
             </div>
           ) : (
             projects.map((project) => {
               const pid = project["project/id"] || "";
-              const pname = project["project/name"] || "Untitled";
+              const pname = project["project/name"] || t("common.untitledProject");
               const isSelected = currentProjectId === pid;
 
               return (
                 <button
+                  type="button"
                   key={pid}
                   onClick={() => handleAssociate(pid)}
                   className={cn(

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Check, Clock, AlertCircle, FileText } from "lucide-react";
+import { FileText, Clock } from "lucide-react";
+import { EmptyStateHero } from "@/components/tailwind/ui/EmptyStateHero";
 import { cn } from "@/lib/utils";
 import { queryData, getAllProjects } from "@/lib/store/db";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n";
 
 interface DocumentListProps {
   projectId?: string | null;
@@ -30,6 +32,7 @@ interface ProjectItem {
 export function DocumentList({ projectId }: DocumentListProps) {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [projectsMap, setProjectsMap] = useState<Record<string, string>>({});
+  const { t } = useI18n();
 
   const loadDocuments = useCallback(() => {
     const allProjects = getAllProjects() as ProjectItem[];
@@ -37,7 +40,7 @@ export function DocumentList({ projectId }: DocumentListProps) {
     for (const p of allProjects) {
       const pid = p["project/id"];
       if (pid) {
-        pmap[pid] = p["project/name"] || "Untitled";
+        pmap[pid] = p["project/name"] || t("common.untitledProject");
       }
     }
     setProjectsMap(pmap);
@@ -62,90 +65,66 @@ export function DocumentList({ projectId }: DocumentListProps) {
     });
 
     setDocuments(loadedDocs.filter((d) => d["document/id"]));
-  }, [projectId]);
+  }, [projectId, t]);
 
   useEffect(() => {
     loadDocuments();
   }, [loadDocuments]);
 
-  const getSyncIcon = (status?: string) => {
-    switch (status) {
-      case "synced":
-        return <Check className="h-4 w-4 text-green-500" />;
-      case "pending":
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      case "error":
-      case "failed":
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  const getSyncLabel = (status?: string) => {
-    switch (status) {
-      case "synced":
-        return "Synced";
-      case "pending":
-        return "Pending";
-      case "error":
-      case "failed":
-        return "Error";
-      default:
-        return status || "Unsynced";
-    }
-  };
-
   if (documents.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <FileText className="mb-3 h-12 w-12 opacity-40" />
-        <p className="text-sm">No documents yet</p>
-      </div>
+      <EmptyStateHero
+        icon={<FileText className="h-7 w-7" />}
+        title={t("knowledgeBase.documentListEmptyTitle")}
+        description={t("knowledgeBase.documentListEmptyDescription")}
+      />
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {documents.map((doc) => {
         const docId = doc["document/id"] || "";
-        const title = doc["document/title"] || "Untitled";
-        const syncStatus = doc["document/syncStatus"];
+        const title = doc["document/title"] || t("common.untitledDocument");
         const updatedAt = doc["document/updatedAt"];
         const projectRef = doc["document/project"];
-        const associatedProjectId = projectRef && typeof projectRef === "object" ? projectRef["project/id"] : null;
-        const associatedProjectName = associatedProjectId ? projectsMap[associatedProjectId] : null;
+        const associatedProjectId =
+          projectRef && typeof projectRef === "object"
+            ? projectRef["project/id"]
+            : null;
+        const associatedProjectName = associatedProjectId
+          ? projectsMap[associatedProjectId]
+          : null;
 
         return (
           <Link
             key={docId}
-            href={`/?doc=${docId}`}
-            className="flex items-center justify-between rounded-lg border border-muted bg-background px-4 py-3 shadow-sm transition-colors hover:bg-accent/50"
+            href={`/knowledge-base/documents?doc=${docId}`}
+            className={cn("object-card p-5 flex flex-col cursor-pointer")}
           >
-            <div className="flex items-center gap-3 min-w-0">
-              <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />
-              <div className="flex flex-col min-w-0">
-                <span className="font-medium text-sm truncate">{title}</span>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {associatedProjectName && (
-                    <span className="truncate">{associatedProjectName}</span>
-                  )}
-                  {updatedAt && (
-                    <span>{new Date(updatedAt).toLocaleDateString()}</span>
-                  )}
-                </div>
+            <div className="flex items-start gap-3 mb-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-math-hover">
+                <FileText className="h-4 w-4 text-math-text-secondary" />
               </div>
+              <h3 className="text-[20px] font-bold tracking-tight leading-snug line-clamp-2 text-math-text">
+                {title}
+              </h3>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0 ml-3">
-              {getSyncIcon(syncStatus)}
-              <span className={cn(
-                "text-xs",
-                syncStatus === "synced" && "text-green-600",
-                syncStatus === "pending" && "text-yellow-600",
-                (syncStatus === "error" || syncStatus === "failed") && "text-red-600"
-              )}>
-                {getSyncLabel(syncStatus)}
-              </span>
+
+            <div className="mt-auto flex items-center justify-between gap-2">
+              {associatedProjectName ? (
+                <span className="px-2.5 py-1 bg-math-hover text-math-text-secondary rounded-full text-[11px] font-medium border border-math-border">
+                  {associatedProjectName}
+                </span>
+              ) : (
+                <span />
+              )}
+              {updatedAt && (
+                <div className="flex items-center gap-1 text-[14px] text-math-text-secondary shrink-0">
+                  <Clock className="h-3 w-3" />
+                  <span>{new Date(updatedAt).toLocaleDateString()}</span>
+                </div>
+              )}
             </div>
           </Link>
         );

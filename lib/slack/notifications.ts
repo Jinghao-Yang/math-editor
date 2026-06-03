@@ -2,10 +2,34 @@ import { SlackClient } from "./client";
 import { getAllSlackIntegrations } from "@/lib/store/db";
 import type { Document } from "@/lib/store/types";
 import type { KnownBlock } from "@slack/web-api";
+import { dictionaries, type Locale } from "@/lib/i18n";
+
+function t(locale: Locale, key: string, values?: Record<string, string | number>): string {
+  const parts = key.split(".");
+  let result: unknown = dictionaries[locale];
+  for (const part of parts) {
+    if (result && typeof result === "object" && part in result) {
+      result = (result as Record<string, unknown>)[part];
+    } else {
+      return key;
+    }
+  }
+
+  let message = typeof result === "string" ? result : key;
+
+  if (values) {
+    for (const [k, v] of Object.entries(values)) {
+      message = message.replaceAll(`{${k}}`, String(v));
+    }
+  }
+
+  return message;
+}
 
 export async function sendDocumentUpdateNotification(
   doc: Document,
-  action: "created" | "updated" | "deleted"
+  action: "created" | "updated" | "deleted",
+  locale: Locale = "en"
 ) {
   const integrations = getAllSlackIntegrations();
 
@@ -15,10 +39,10 @@ export async function sendDocumentUpdateNotification(
 
     const client = new SlackClient(integration.teamId, integration.botToken);
 
-    const actionText = {
-      created: "创建了新文档",
-      updated: "更新了文档",
-      deleted: "删除了文档",
+    const actionText: Record<string, string> = {
+      created: t(locale, "slack.notificationCreated"),
+      updated: t(locale, "slack.notificationUpdated"),
+      deleted: t(locale, "slack.notificationDeleted"),
     };
 
     const blocks: KnownBlock[] = [

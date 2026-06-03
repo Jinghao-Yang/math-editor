@@ -5,6 +5,7 @@ import { Popover, PopoverTrigger } from "@radix-ui/react-popover";
 import { Check, Trash } from "lucide-react";
 import { useEditor } from "@/lib/editor-core";
 import { useEffect, useRef } from "react";
+import { useI18n } from "@/lib/i18n";
 
 export function isValidUrl(url: string) {
   try {
@@ -32,6 +33,7 @@ interface LinkSelectorProps {
 export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const { editor } = useEditor();
+  const { t } = useI18n();
 
   // Autofocus on input by default
   useEffect(() => {
@@ -49,7 +51,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
               "text-blue-500": editor.isActive("link"),
             })}
           >
-            Link
+            {t("selectors.link")}
           </p>
         </Button>
       </PopoverTrigger>
@@ -70,7 +72,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Paste a link"
+            placeholder={t("selectors.pasteLink")}
             className="flex-1 bg-background p-1 text-sm outline-none"
             defaultValue={editor.getAttributes("link").href || ""}
           />

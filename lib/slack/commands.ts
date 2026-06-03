@@ -1,4 +1,5 @@
 import { SlackClient } from "./client";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
 export interface SlackCommand {
   team_id: string;
@@ -8,13 +9,35 @@ export interface SlackCommand {
   user_id: string;
 }
 
-export async function handleSlashCommand(command: SlackCommand) {
+function t(locale: Locale, key: string, values?: Record<string, string | number>): string {
+  const parts = key.split(".");
+  let result: unknown = dictionaries[locale];
+  for (const part of parts) {
+    if (result && typeof result === "object" && part in result) {
+      result = (result as Record<string, unknown>)[part];
+    } else {
+      return key;
+    }
+  }
+
+  let message = typeof result === "string" ? result : key;
+
+  if (values) {
+    for (const [k, v] of Object.entries(values)) {
+      message = message.replaceAll(`{${k}}`, String(v));
+    }
+  }
+
+  return message;
+}
+
+export async function handleSlashCommand(command: SlackCommand, locale: Locale = "en") {
   const { team_id, command: cmd, text } = command;
 
   if (cmd !== "/math-search") {
     return {
       response_type: "ephemeral",
-      text: "未知命令",
+      text: t(locale, "slack.unknownCommand"),
     };
   }
 
@@ -22,14 +45,14 @@ export async function handleSlashCommand(command: SlackCommand) {
   if (!client) {
     return {
       response_type: "ephemeral",
-      text: "请先安装 Slack 集成",
+      text: t(locale, "slack.installFirst"),
     };
   }
 
   if (!text.trim()) {
     return {
       response_type: "ephemeral",
-      text: "请输入搜索关键词",
+      text: t(locale, "slack.enterSearchKeyword"),
     };
   }
 
@@ -38,7 +61,7 @@ export async function handleSlashCommand(command: SlackCommand) {
   if (results.length === 0) {
     return {
       response_type: "in_channel",
-      text: `未找到包含 "${text}" 的文档`,
+      text: t(locale, "slack.noDocumentsFound", { text }),
     };
   }
 
@@ -52,7 +75,7 @@ export async function handleSlashCommand(command: SlackCommand) {
 
   return {
     response_type: "in_channel" as const,
-    text: `找到 ${results.length} 个相关文档`,
+    text: t(locale, "slack.documentsFound", { count: results.length }),
     blocks,
   };
 }

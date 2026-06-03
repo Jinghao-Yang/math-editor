@@ -4,6 +4,16 @@ export const defaultEditorContent: JSONContent = {
   type: "doc",
   content: [
     {
+      type: "paragraph",
+      content: [{ type: "text", text: "" }],
+    },
+  ],
+};
+
+export const welcomeEditorContent: JSONContent = {
+  type: "doc",
+  content: [
+    {
       type: "heading",
       attrs: { level: 2 },
       content: [{ type: "text", text: "Introducing Novel" }],

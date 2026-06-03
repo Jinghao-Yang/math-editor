@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
 import {
   getCycles,
   deleteCycle,
@@ -15,8 +13,6 @@ import {
   Trash2,
   MoreHorizontal,
   Plus,
-  CheckCircle2,
-  Circle,
 } from "lucide-react";
 import { Button } from "@/components/tailwind/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/tailwind/ui/card";
@@ -40,6 +36,7 @@ import {
 import { Input } from "@/components/tailwind/ui/input";
 import { Label } from "@/components/tailwind/ui/label";
 import { Textarea } from "@/components/tailwind/ui/textarea";
+import { useI18n } from "@/lib/i18n";
 
 interface CycleData {
   id: string;
@@ -53,7 +50,7 @@ interface CycleData {
 }
 
 export function CycleList() {
-  const router = useRouter();
+  const { locale, t } = useI18n();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newCycleName, setNewCycleName] = useState("");
   const [newCycleDescription, setNewCycleDescription] = useState("");
@@ -86,7 +83,7 @@ export function CycleList() {
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "";
-    return new Date(dateStr).toLocaleDateString("en-US", {
+    return new Date(dateStr).toLocaleDateString(locale, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -99,26 +96,28 @@ export function CycleList() {
     const end = new Date(cycle.endDate);
     
     if (cycle.status === "completed") {
-      return <Badge variant="default">Completed</Badge>;
-    } else if (cycle.status === "paused") {
-      return <Badge variant="secondary">Paused</Badge>;
-    } else if (now < start) {
-      return <Badge variant="outline">Upcoming</Badge>;
-    } else if (now > end) {
-      return <Badge variant="destructive">Overdue</Badge>;
-    } else {
-      return <Badge variant="default" className="bg-green-500">Active</Badge>;
+      return <Badge variant="default">{t("knowledgeBase.cycleStatusCompleted")}</Badge>;
     }
+    if (cycle.status === "paused") {
+      return <Badge variant="secondary">{t("knowledgeBase.cycleStatusPaused")}</Badge>;
+    }
+    if (now < start) {
+      return <Badge variant="outline">{t("knowledgeBase.cycleStatusUpcoming")}</Badge>;
+    }
+    if (now > end) {
+      return <Badge variant="destructive">{t("knowledgeBase.cycleStatusOverdue")}</Badge>;
+    }
+    return <Badge variant="success">{t("knowledgeBase.cycleStatusActive")}</Badge>;
   };
 
   const getDaysRemaining = (endDate: string) => {
     const now = new Date();
     const end = new Date(endDate);
     const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff < 0) return "Overdue";
-    if (diff === 0) return "Due today";
-    if (diff === 1) return "1 day left";
-    return `${diff} days left`;
+    if (diff < 0) return t("knowledgeBase.cycleStatusOverdue");
+    if (diff === 0) return t("knowledgeBase.cycleDueToday");
+    if (diff === 1) return t("knowledgeBase.cycleOneDayLeft");
+    return t("knowledgeBase.cycleDaysLeft", { count: diff });
   };
 
   const handleCreateCycle = () => {
@@ -138,7 +137,7 @@ export function CycleList() {
   };
 
   const handleDeleteCycle = (cycleId: string) => {
-    if (confirm("Are you sure you want to delete this cycle?")) {
+    if (confirm(t("knowledgeBase.deleteCycleConfirm"))) {
       deleteCycle(cycleId);
       loadCycles();
     }
@@ -148,47 +147,47 @@ export function CycleList() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Cycles</h2>
-          <p className="text-muted-foreground">
-            Track your learning progress over time
+          <h2 className="text-2xl font-bold text-[#111827]">{t("knowledgeBase.cyclesTitle")}</h2>
+          <p className="text-[#6B7280]">
+            {t("knowledgeBase.cyclesDescription")}
           </p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="gap-1.5 rounded-lg shadow-sm">
               <Plus className="h-4 w-4" />
-              New Cycle
+              {t("knowledgeBase.newCycle")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create New Cycle</DialogTitle>
+              <DialogTitle>{t("knowledgeBase.createCycleTitle")}</DialogTitle>
               <DialogDescription>
-                Create a learning cycle to track your progress
+                {t("knowledgeBase.createCycleDescription")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t("knowledgeBase.cycleNameLabel")}</Label>
                 <Input
                   id="name"
-                  placeholder="e.g., Calculus Week 1"
+                  placeholder={t("knowledgeBase.cycleNamePlaceholder")}
                   value={newCycleName}
                   onChange={(e) => setNewCycleName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t("knowledgeBase.cycleDescriptionLabel")}</Label>
                 <Textarea
                   id="description"
-                  placeholder="What will you learn in this cycle?"
+                  placeholder={t("knowledgeBase.cycleDescriptionPlaceholder")}
                   value={newCycleDescription}
                   onChange={(e) => setNewCycleDescription(e.target.value)}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
+                  <Label htmlFor="startDate">{t("knowledgeBase.startDateLabel")}</Label>
                   <Input
                     id="startDate"
                     type="date"
@@ -197,7 +196,7 @@ export function CycleList() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
+                  <Label htmlFor="endDate">{t("knowledgeBase.endDateLabel")}</Label>
                   <Input
                     id="endDate"
                     type="date"
@@ -209,10 +208,10 @@ export function CycleList() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button onClick={handleCreateCycle} disabled={!newCycleName.trim()}>
-                Create Cycle
+                {t("knowledgeBase.createCycleAction")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -220,18 +219,18 @@ export function CycleList() {
       </div>
 
       {cycles.length === 0 ? (
-        <Card className="border-dashed border-2 bg-gradient-to-b from-muted/30 to-transparent">
+        <Card className="border-dashed border-2 border-[#E5E7EB] bg-[#F8F9FB]">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/20 dark:to-orange-900/20 flex items-center justify-center mb-6 ring-1 ring-amber-200/50 dark:ring-amber-700/30">
-              <CalendarClock className="h-10 w-10 text-amber-500" />
+            <div className="w-20 h-20 rounded-2xl bg-[#FFF7ED] flex items-center justify-center mb-6">
+              <CalendarClock className="h-10 w-10 text-category-orange" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">No cycles yet</h3>
-            <p className="text-muted-foreground text-center max-w-sm mb-6">
-              Create your first learning cycle to track progress and stay organized
+            <h3 className="text-xl font-semibold mb-2 text-[#111827]">{t("knowledgeBase.noCyclesTitle")}</h3>
+            <p className="text-[#6B7280] text-center max-w-sm mb-6">
+              {t("knowledgeBase.noCyclesDescription")}
             </p>
-            <Button onClick={() => setIsCreateOpen(true)} size="lg" className="gap-2 rounded-xl shadow-sm shadow-primary/20">
+            <Button onClick={() => setIsCreateOpen(true)} size="lg" className="gap-2 rounded-xl">
               <Plus className="h-5 w-5" />
-              Create Your First Cycle
+              {t("knowledgeBase.createFirstCycleAction")}
             </Button>
           </CardContent>
         </Card>
@@ -246,16 +245,15 @@ export function CycleList() {
             return (
               <Card 
                 key={cycle.id} 
-                className="group relative hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-border/50 overflow-hidden"
+                className="group relative hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-200 border-[#E5E7EB] overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <CardHeader className="p-4 pb-2 relative">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center flex-shrink-0 ring-1 ring-amber-200/50 dark:ring-amber-700/30">
-                        <CalendarClock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <div className="w-9 h-9 rounded-lg bg-[#FFF7ED] flex items-center justify-center flex-shrink-0">
+                        <CalendarClock className="h-4 w-4 text-category-orange" />
                       </div>
-                      <CardTitle className="text-base font-semibold truncate">
+                      <CardTitle className="text-base font-semibold truncate text-[#111827]">
                         {cycle.name}
                       </CardTitle>
                     </div>
@@ -275,34 +273,37 @@ export function CycleList() {
                           className="text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
+                          {t("knowledgeBase.deleteCycle")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                   <div className="flex items-center gap-2 mt-2">
                     {getCycleStatusBadge(cycle)}
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-[#6B7280]">
                       {getDaysRemaining(cycle.endDate)}
                     </span>
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-2 space-y-3">
                   {cycle.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <p className="text-sm text-[#6B7280] line-clamp-2">
                       {cycle.description}
                     </p>
                   )}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">
-                        {progress.completed} / {progress.total} documents
+                      <span className="text-[#6B7280]">
+                        {t("knowledgeBase.cycleDocumentsProgress", {
+                          completed: progress.completed,
+                          total: progress.total,
+                        })}
                       </span>
-                      <span className="font-medium">{progressPercent}%</span>
+                      <span className="font-medium text-[#111827]">{progressPercent}%</span>
                     </div>
                     <Progress value={progressPercent} className="h-2" />
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 text-xs text-[#9CA3AF]">
                     <Calendar className="h-3 w-3" />
                     <span>
                       {formatDate(cycle.startDate)} - {formatDate(cycle.endDate)}

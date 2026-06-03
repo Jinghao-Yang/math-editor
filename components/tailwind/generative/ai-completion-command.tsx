@@ -1,6 +1,7 @@
 import { CommandGroup, CommandItem, CommandSeparator } from "../ui/command";
 import { useEditor } from "@/lib/editor-core";
 import { Check, TextQuote, TrashIcon } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 const AICompletionCommands = ({
   completion,
@@ -10,6 +11,7 @@ const AICompletionCommands = ({
   onDiscard: () => void;
 }) => {
   const { editor } = useEditor();
+  const { t } = useI18n();
   return (
     <>
       <CommandGroup>
@@ -33,7 +35,7 @@ const AICompletionCommands = ({
           }}
         >
           <Check className="h-4 w-4 text-muted-foreground" />
-          Replace selection
+          {t("ai.replaceSelection")}
         </CommandItem>
         <CommandItem
           className="gap-2 px-4"
@@ -48,7 +50,7 @@ const AICompletionCommands = ({
           }}
         >
           <TextQuote className="h-4 w-4 text-muted-foreground" />
-          Insert below
+          {t("ai.insertBelow")}
         </CommandItem>
       </CommandGroup>
       <CommandSeparator />
@@ -56,7 +58,7 @@ const AICompletionCommands = ({
       <CommandGroup>
         <CommandItem onSelect={onDiscard} value="thrash" className="gap-2 px-4">
           <TrashIcon className="h-4 w-4 text-muted-foreground" />
-          Discard
+          {t("ai.discard")}
         </CommandItem>
       </CommandGroup>
     </>

@@ -1,79 +1,74 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { PlaneLayout, ViewToggle, KanbanView, CalendarView, KnowledgeBaseLayout, type ViewType } from "@/components/plane";
 import { Button } from "@/components/tailwind/ui/button";
 import { Plus } from "lucide-react";
 import { createProject } from "@/lib/store/db";
+import { useKnowledgeBaseDocumentSelection } from "@/hooks/use-knowledge-base-document-selection";
+import { useI18n } from "@/lib/i18n";
 
 export default function KnowledgeBasePage() {
   const [currentView, setCurrentView] = useState<ViewType>("list");
-  const [projectName, setProjectName] = useState("");
+  const [mode, setMode] = useState<"browse" | "edit">("browse");
   const [refreshKey, setRefreshKey] = useState(0);
-  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const { selectedDocumentId, handleSelectDocument, clearSelectedDocument } = useKnowledgeBaseDocumentSelection();
+  const { t } = useI18n();
 
   const handleCreateProject = () => {
-    const name = projectName.trim() || "Untitled Project";
-    createProject(name);
-    setProjectName("");
+    createProject(t("common.untitledProject"));
     setRefreshKey((k) => k + 1);
   };
 
-  const triggerRefresh = useCallback(() => {
-    setRefreshKey((k) => k + 1);
-  }, []);
-
-  const handleSelectDocument = (docId: string) => {
-    setSelectedDocumentId(docId);
+  const handleDocumentSelect = (docId: string) => {
+    handleSelectDocument(docId);
+    setMode("edit");
   };
-
-  const ViewContainer = ({ children }: { children: React.ReactNode }) => children;
 
   return (
     <PlaneLayout>
-      <div className="h-full w-full">
-        <KnowledgeBaseLayout>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Projects</h2>
-                <p className="text-muted-foreground">
-                  Manage your projects and documents
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button size="sm" className="gap-1.5 rounded-lg shadow-sm" onClick={handleCreateProject}>
+      <div className="h-full w-full canvas-grid">
+        <KnowledgeBaseLayout
+          mode={mode}
+          documentId={selectedDocumentId}
+          onBack={() => {
+            setMode("browse");
+            clearSelectedDocument();
+          }}
+        >
+          {mode === "browse" && (
+            <div className="h-full overflow-auto p-4 md:p-6">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <Button size="sm" className="gap-1.5 rounded-xl bg-math-brand text-white hover:opacity-90" onClick={handleCreateProject}>
                   <Plus className="h-4 w-4" />
-                  New Project
+                  {t("knowledgeBase.newProject")}
                 </Button>
                 <ViewToggle currentView={currentView} onViewChange={setCurrentView} />
               </div>
-            </div>
 
-            <ViewContainer>
               {currentView === "kanban" && (
-                <KanbanView 
-                  key={refreshKey} 
-                  onSelectDocument={handleSelectDocument}
+                <KanbanView
+                  key={`kanban-${refreshKey}`}
+                  onSelectDocument={handleDocumentSelect}
                   selectedDocumentId={selectedDocumentId}
                 />
               )}
               {currentView === "calendar" && (
-                <CalendarView 
-                  key={refreshKey} 
-                  onSelectDocument={handleSelectDocument}
+                <CalendarView
+                  key={`calendar-${refreshKey}`}
+                  onSelectDocument={handleDocumentSelect}
                   selectedDocumentId={selectedDocumentId}
                 />
               )}
               {currentView === "list" && (
-                <KanbanView 
-                  key={refreshKey} 
-                  onSelectDocument={handleSelectDocument}
+                <KanbanView
+                  key={`list-${refreshKey}`}
+                  onSelectDocument={handleDocumentSelect}
                   selectedDocumentId={selectedDocumentId}
                 />
               )}
-            </ViewContainer>
-          </div>
+            </div>
+          )}
         </KnowledgeBaseLayout>
       </div>
     </PlaneLayout>

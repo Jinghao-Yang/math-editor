@@ -3,17 +3,17 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { getAllProjects, getProjectDocuments, createDocument } from "@/lib/store/db";
+import { getAllProjects, getAllDocuments, getProjectDocuments } from "@/lib/store/db";
 import { FileText, Calendar, MoreHorizontal, ExternalLink, Plus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/tailwind/ui/card";
-import { Badge } from "@/components/tailwind/ui/badge";
 import { Button } from "@/components/tailwind/ui/button";
+import { EmptyStateHero } from "@/components/tailwind/ui/EmptyStateHero";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/tailwind/ui/dropdown-menu";
+import { useI18n } from "@/lib/i18n";
 
 interface KanbanViewProps {
   groupBy?: "project" | "module";
@@ -22,12 +22,14 @@ interface KanbanViewProps {
 }
 
 interface DocumentData {
-  id: string;
-  title: string;
-  updatedAt: string;
-  syncStatus: string;
-  outlineId?: string;
-  projectId?: string;
+  "document/id"?: string;
+  "document/title"?: string;
+  "document/updatedAt"?: string;
+  "document/syncStatus"?: string;
+  "document/project"?: {
+    "project/id"?: string;
+    "project/name"?: string;
+  } | null;
 }
 
 interface ProjectData {
@@ -35,220 +37,223 @@ interface ProjectData {
   "project/name": string;
 }
 
-export function KanbanView({ 
-  groupBy = "project", 
+// ---- 纯数据函数 ----
+
+function loadProjects(): ProjectData[] {
+  return (getAllProjects() as unknown as ProjectData[]) || [];
+}
+
+function loadProjectDocs(projects: ProjectData[]) {
+  const docsMap: Record<string, DocumentData[]> = {};
+  const categorizedIds = new Set<string>();
+
+  for (const project of projects) {
+    const pid = project["project/id"];
+    if (!pid) continue;
+    try {
+      const docs = (getProjectDocuments(pid) as unknown as DocumentData[]).filter(
+        (d) => d["document/id"]
+      );
+      docsMap[pid] = docs;
+      for (const doc of docs) {
+        if (doc["document/id"]) categorizedIds.add(doc["document/id"]);
+      }
+    } catch {
+      docsMap[pid] = [];
+    }
+  }
+
+  return { docsMap, categorizedIds };
+}
+
+function loadUncategorizedDocs(categorizedIds: Set<string>): DocumentData[] {
+  try {
+    return ((getAllDocuments() as unknown as DocumentData[]) || []).filter((doc) => {
+      const docId = doc["document/id"];
+      const hasProject = Boolean(doc["document/project"]?.["project/id"]);
+      return typeof docId === "string" && !hasProject && !categorizedIds.has(docId);
+    });
+  } catch {
+    return [];
+  }
+}
+
+function formatDateFromStr(dateStr: string | undefined, locale: string) {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString(locale, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+// ---- 子组件 ----
+
+function ColumnHeader({ name, count }: { name: string; count: number }) {
+  return (
+    <div className="flex items-center justify-between mb-3 px-1 shrink-0">
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full border-2 border-math-text-tertiary" />
+        <h3 className="text-xs font-bold text-math-text-secondary">{name}</h3>
+      </div>
+      <span className="bg-math-hover text-math-text-tertiary px-1.5 rounded-md text-[10px] tabular-nums">
+        {count}
+      </span>
+    </div>
+  );
+}
+
+function DocCard({
+  doc,
+  selected,
+  onSelect,
+  locale,
+  t,
+}: {
+  doc: DocumentData;
+  selected: boolean;
+  onSelect: (id: string) => void;
+  locale: string;
+  t: (key: string) => string;
+}) {
+  const docId = doc["document/id"];
+  if (!docId) return null;
+
+  const title = doc["document/title"] || t("common.untitledDocument");
+  const updatedAt = doc["document/updatedAt"];
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(docId)}
+      className={cn(
+        "w-full text-left",
+        "object-card p-5",
+        "cursor-pointer relative group",
+        selected && "selected"
+      )}
+    >
+      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <button className="p-1 hover:bg-math-hover rounded text-math-text-tertiary">
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link
+                href={`/knowledge-base/documents?doc=${docId}`}
+                className="flex items-center gap-2"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="h-4 w-4" />
+                {t("knowledgeBase.openInNewTab")}
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <h4 className="text-[20px] font-bold tracking-tight leading-snug text-math-text mb-3 pr-8">
+        {title}
+      </h4>
+
+      {updatedAt && (
+        <div className="flex items-center gap-1.5 text-math-text-secondary text-[14px]">
+          <Calendar className="h-3.5 w-3.5 shrink-0" />
+          <span>{formatDateFromStr(updatedAt, locale)}</span>
+        </div>
+      )}
+    </button>
+  );
+}
+
+// ---- 主组件 ----
+
+export function KanbanView({
+  groupBy: _groupBy = "project",
   onSelectDocument,
-  selectedDocumentId 
+  selectedDocumentId,
 }: KanbanViewProps) {
+  const { locale, t } = useI18n();
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [projectDocuments, setProjectDocuments] = useState<Record<string, DocumentData[]>>({});
   const [uncategorizedDocs, setUncategorizedDocs] = useState<DocumentData[]>([]);
 
-  const loadData = useCallback(() => {
-    try {
-      const allProjects = getAllProjects() as unknown as ProjectData[];
-      setProjects(allProjects);
-
-      const docsMap: Record<string, DocumentData[]> = {};
-      const categorizedIds = new Set<string>();
-
-      for (const project of allProjects) {
-        const pid = project["project/id"];
-        if (pid) {
-          try {
-            const docs = getProjectDocuments(pid) as unknown as DocumentData[];
-            docsMap[pid] = docs;
-            docs.forEach((d) => { if (d.id) categorizedIds.add(d.id); });
-          } catch {
-            docsMap[pid] = [];
-          }
-        }
-      }
-      setProjectDocuments(docsMap);
-
-      try {
-        const allDocs = getProjectDocuments("") as unknown as DocumentData[];
-        setUncategorizedDocs(allDocs.filter((doc) => !categorizedIds.has(doc.id)));
-      } catch {
-        setUncategorizedDocs([]);
-      }
-    } catch {
-      setProjects([]);
-      setProjectDocuments({});
-      setUncategorizedDocs([]);
-    }
+  const refresh = useCallback(() => {
+    const allProjects = loadProjects();
+    setProjects(allProjects);
+    const { docsMap, categorizedIds } = loadProjectDocs(allProjects);
+    setProjectDocuments(docsMap);
+    setUncategorizedDocs(loadUncategorizedDocs(categorizedIds));
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    refresh();
+  }, [refresh]);
 
-  const createDocInProject = (projectId: string) => {
-    const docId = `doc-${Date.now()}`;
-    createDocument({
-      id: docId,
-      title: "Untitled Document",
-      projectId,
-    });
-    loadData();
-  };
+  const allColumns = [
+    ...projects.map((project) => ({
+      id: project["project/id"],
+      name: project["project/name"] || t("common.untitledProject"),
+      docs: projectDocuments[project["project/id"]] || [],
+    })),
+    ...(uncategorizedDocs.length > 0
+      ? [
+          {
+            id: "__uncategorized__",
+            name: t("knowledgeBase.uncategorized"),
+            docs: uncategorizedDocs,
+          },
+        ]
+      : []),
+  ];
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  const getSyncBadgeVariant = (status: string) => {
-    switch (status) {
-      case "synced":
-        return "default" as const;
-      case "pending":
-        return "secondary" as const;
-      case "failed":
-        return "destructive" as const;
-      default:
-        return "outline" as const;
-    }
-  };
-
-  const DocumentCard = ({ doc }: { doc: DocumentData }) => (
-    <Card 
-      onClick={(e) => {
-        e.preventDefault();
-        if (onSelectDocument) {
-          onSelectDocument(doc.id);
-        }
-      }}
-      className={cn(
-        "group cursor-pointer hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-200 border-border/50 overflow-hidden",
-        selectedDocumentId === doc.id && "border-primary/50 shadow-md"
-      )}
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      <CardHeader className="p-3.5 pb-1.5 relative">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-md bg-muted/60 flex items-center justify-center flex-shrink-0">
-              <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-            </div>
-            <CardTitle className="text-sm font-semibold truncate">
-              {doc.title || "Untitled"}
-            </CardTitle>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <MoreHorizontal className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={`/?doc=${doc.id}`} className="flex items-center gap-2" target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4" />
-                  Open in new tab
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardHeader>
-      <CardContent className="p-3 pt-1">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Calendar className="h-3 w-3" />
-            <span>{formatDate(doc.updatedAt)}</span>
-          </div>
-          <Badge variant={getSyncBadgeVariant(doc.syncStatus)} className="text-xs">
-            {doc.syncStatus || "unsynced"}
-          </Badge>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  if (allColumns.length === 0) {
+    return (
+      <EmptyStateHero
+        icon={<FileText className="h-7 w-7" />}
+        title={t("knowledgeBase.kanbanEmptyTitle")}
+        description={t("knowledgeBase.kanbanEmptyDescription")}
+      />
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {projects.length === 0 && uncategorizedDocs.length === 0 ? (
-        <Card className="border-dashed border-2 bg-gradient-to-b from-muted/30 to-transparent">
-          <div className="text-center py-16">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 flex items-center justify-center mx-auto mb-6 ring-1 ring-emerald-200/50 dark:ring-emerald-700/30">
-              <FileText className="h-10 w-10 text-emerald-500" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">No documents yet</h3>
-            <p className="text-muted-foreground max-w-sm mx-auto">
-              Create a project and add some documents to see them here.
-            </p>
-          </div>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {/* Grouped by Projects */}
-          {projects.map((project) => {
-            const pid = project["project/id"];
-            const docs = projectDocuments[pid] || [];
-            
-            return (
-              <div key={pid} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm shadow-blue-500/30" />
-                    {project["project/name"] || "Untitled Project"}
-                  </h3>
-                  <Badge variant="secondary" className="text-xs">
-                    {docs.length} {docs.length === 1 ? "doc" : "docs"}
-                  </Badge>
-                </div>
-                
-                {docs.length === 0 ? (
-                  <div className={cn(
-                    "rounded-lg border-2 border-dashed p-6 text-center",
-                    "border-muted-foreground/20 bg-muted/20"
-                  )}>
-                    <p className="text-sm text-muted-foreground">
-                      No documents in this project
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {docs.map((doc) => (
-                      <DocumentCard key={doc.id} doc={doc} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+    <div className="-mx-2 px-2 pb-2">
+      <div className="flex gap-5 overflow-x-auto pb-4 items-start">
+        {allColumns.map((column) => (
+          <div key={column.id} className="shrink-0 w-72 flex flex-col">
+            <ColumnHeader name={column.name} count={column.docs.length} />
 
-          {/* Uncategorized */}
-          {uncategorizedDocs.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-muted-foreground" />
-                  Uncategorized
-                </h3>
-                <Badge variant="secondary" className="text-xs">
-                  {uncategorizedDocs.length} {uncategorizedDocs.length === 1 ? "doc" : "docs"}
-                </Badge>
+            {column.docs.length === 0 ? (
+              <div className="flex-1 rounded-[16px] border-2 border-dashed border-math-border bg-math-bg flex items-center justify-center p-8">
+                <div className="text-center">
+                  <Plus className="h-5 w-5 text-math-text-tertiary mx-auto mb-2" />
+                  <p className="text-xs text-math-text-secondary">
+                    {t("knowledgeBase.noDocumentsInProject")}
+                  </p>
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {uncategorizedDocs.map((doc) => (
-                  <DocumentCard key={doc.id} doc={doc} />
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                {column.docs.map((doc) => (
+                  <DocCard
+                    key={doc["document/id"]}
+                    doc={doc}
+                    selected={selectedDocumentId === doc["document/id"]}
+                    onSelect={(id) => onSelectDocument?.(id)}
+                    locale={locale}
+                    t={t}
+                  />
                 ))}
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

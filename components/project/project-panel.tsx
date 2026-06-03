@@ -5,6 +5,7 @@ import { FolderKanban } from "lucide-react";
 import { ProjectList } from "./project-list";
 import { ProjectForm } from "./project-form";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 interface ProjectPanelProps {
   className?: string;
@@ -15,6 +16,7 @@ interface ProjectPanelProps {
 export function ProjectPanel({ className, onSelectProject, selectedProjectId: externalSelectedProjectId }: ProjectPanelProps) {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(externalSelectedProjectId ?? null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (externalSelectedProjectId !== undefined) {
@@ -41,7 +43,7 @@ export function ProjectPanel({ className, onSelectProject, selectedProjectId: ex
       <div className="flex items-center justify-between border-b border-muted px-4 py-3">
         <div className="flex items-center gap-2">
           <FolderKanban className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">Projects</h3>
+          <h3 className="text-sm font-semibold">{t("project.projects")}</h3>
         </div>
         <ProjectForm onProjectCreated={handleProjectCreated} />
       </div>

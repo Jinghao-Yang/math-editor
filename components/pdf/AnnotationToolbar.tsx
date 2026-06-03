@@ -1,6 +1,7 @@
 'use client';
 
 import { MousePointer2, Highlighter, Type, Square, Palette } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 interface AnnotationToolbarProps {
   selectedTool: 'select' | 'highlight' | 'text' | 'rectangle';
@@ -25,42 +26,48 @@ export function PdfAnnotationToolbar({
   selectedColor,
   onColorSelect,
 }: AnnotationToolbarProps) {
+  const { t } = useI18n();
+
   return (
     <div className="flex items-center gap-2 p-2 border-b bg-white">
       <div className="flex items-center gap-1 mr-4">
         <button
+          type="button"
           onClick={() => onToolSelect('select')}
           className={`p-2 rounded-lg transition-colors ${
             selectedTool === 'select' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100 text-gray-600'
           }`}
-          title="选择"
+          title={t("pdf.select")}
         >
           <MousePointer2 className="w-5 h-5" />
         </button>
         <button
+          type="button"
           onClick={() => onToolSelect('highlight')}
           className={`p-2 rounded-lg transition-colors ${
             selectedTool === 'highlight' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100 text-gray-600'
           }`}
-          title="高亮"
+          title={t("pdf.highlight")}
         >
           <Highlighter className="w-5 h-5" />
         </button>
         <button
+          type="button"
           onClick={() => onToolSelect('text')}
           className={`p-2 rounded-lg transition-colors ${
             selectedTool === 'text' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100 text-gray-600'
           }`}
-          title="文字"
+          title={t("pdf.text")}
         >
           <Type className="w-5 h-5" />
         </button>
         <button
+          type="button"
           onClick={() => onToolSelect('rectangle')}
           className={`p-2 rounded-lg transition-colors ${
             selectedTool === 'rectangle' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100 text-gray-600'
           }`}
-          title="矩形"
+          title={t("pdf.rectangle")}
         >
           <Square className="w-5 h-5" />
         </button>
@@ -71,6 +78,7 @@ export function PdfAnnotationToolbar({
         <div className="flex items-center gap-1">
           {colors.map((color) => (
             <button
+              type="button"
               key={color}
               onClick={() => onColorSelect(color)}
               className={`w-6 h-6 rounded-full border-2 transition-transform ${

@@ -1,0 +1,10 @@
+- [x] 字典已补齐 project、pdf、ai、selectors、plane、slack、metadata 七个命名空间
+- [x] 项目表单、面板、列表和关联组件的文案已切换到统一字典
+- [x] PDF 查看器和注释工具栏文案已切换到统一字典
+- [x] AI 命令菜单、生成提示和错误反馈文案已切换到统一字典
+- [x] 编辑器节点/颜色/链接选择器标签已切换到统一字典
+- [x] DocumentTree、BacklinksPanel、FloatingActionButton 文案已切换到统一字典
+- [x] document-list 同步状态标签和 Slack 命令/通知文案已切换到统一字典
+- [x] 页面元数据已本地化，不再硬编码 Novel 品牌信息
+- [x] 中文与英文切换效果已验证，核心路径不再有硬编码混用
+- [x] 相关改动已通过 lint、typecheck 验证

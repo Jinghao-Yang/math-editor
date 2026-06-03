@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { Link2, FileText, ArrowRight } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 interface Backlink {
   id: string;
@@ -17,6 +18,8 @@ interface BacklinksPanelProps {
 }
 
 export function BacklinksPanel({ docId, backlinks, onNavigate }: BacklinksPanelProps) {
+  const { t } = useI18n();
+
   const filteredBacklinks = useMemo(
     () => backlinks.filter((link) => link.targetDocId === docId),
     [backlinks, docId]
@@ -27,9 +30,9 @@ export function BacklinksPanel({ docId, backlinks, onNavigate }: BacklinksPanelP
       <div className="p-4">
         <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
           <Link2 className="w-4 h-4" />
-          <span>反向链接</span>
+          <span>{t("plane.backlinks")}</span>
         </div>
-        <div className="text-gray-400 text-sm">暂无反向链接</div>
+        <div className="text-gray-400 text-sm">{t("plane.noBacklinks")}</div>
       </div>
     );
   }
@@ -38,11 +41,12 @@ export function BacklinksPanel({ docId, backlinks, onNavigate }: BacklinksPanelP
     <div className="p-4">
       <div className="flex items-center gap-2 text-gray-700 font-medium mb-3">
         <Link2 className="w-4 h-4" />
-        <span>反向链接 ({filteredBacklinks.length})</span>
+        <span>{t("plane.backlinksCount", { count: filteredBacklinks.length })}</span>
       </div>
       <div className="space-y-2">
         {filteredBacklinks.map((backlink) => (
           <button
+            type="button"
             key={backlink.id}
             onClick={() => onNavigate(backlink.sourceDocId)}
             className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors text-left group"

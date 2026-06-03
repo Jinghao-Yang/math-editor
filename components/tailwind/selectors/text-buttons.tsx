@@ -4,36 +4,44 @@ import { BoldIcon, CodeIcon, ItalicIcon, StrikethroughIcon, UnderlineIcon } from
 import { EditorBubbleItem, useEditor } from "@/lib/editor-core";
 import type { SelectorItem } from "./node-selector";
 
+const TEXT_BUTTON_KEYS = {
+  bold: "editor.toolbar.items.bold" as const,
+  italic: "editor.toolbar.items.italic" as const,
+  underline: "editor.toolbar.items.underline" as const,
+  strike: "editor.toolbar.items.strike" as const,
+  code: "editor.toolbar.items.inlineCode" as const,
+};
+
 export const TextButtons = () => {
   const { editor } = useEditor();
   if (!editor) return null;
   const items: SelectorItem[] = [
     {
-      name: "bold",
+      nameKey: TEXT_BUTTON_KEYS.bold,
       isActive: (editor) => editor.isActive("bold"),
       command: (editor) => editor.chain().focus().toggleBold().run(),
       icon: BoldIcon,
     },
     {
-      name: "italic",
+      nameKey: TEXT_BUTTON_KEYS.italic,
       isActive: (editor) => editor.isActive("italic"),
       command: (editor) => editor.chain().focus().toggleItalic().run(),
       icon: ItalicIcon,
     },
     {
-      name: "underline",
+      nameKey: TEXT_BUTTON_KEYS.underline,
       isActive: (editor) => editor.isActive("underline"),
       command: (editor) => editor.chain().focus().toggleUnderline().run(),
       icon: UnderlineIcon,
     },
     {
-      name: "strike",
+      nameKey: TEXT_BUTTON_KEYS.strike,
       isActive: (editor) => editor.isActive("strike"),
       command: (editor) => editor.chain().focus().toggleStrike().run(),
       icon: StrikethroughIcon,
     },
     {
-      name: "code",
+      nameKey: TEXT_BUTTON_KEYS.code,
       isActive: (editor) => editor.isActive("code"),
       command: (editor) => editor.chain().focus().toggleCode().run(),
       icon: CodeIcon,
@@ -43,15 +51,15 @@ export const TextButtons = () => {
     <div className="flex">
       {items.map((item) => (
         <EditorBubbleItem
-          key={item.name}
+          key={item.nameKey}
           onSelect={(editor) => {
             item.command(editor);
           }}
         >
           <Button size="sm" className="rounded-none" variant="ghost" type="button">
             <item.icon
-              className={cn("h-4 w-4", {
-                "text-blue-600": item.isActive(editor),
+              className={cn("h-4 w-4 transition-colors duration-200", {
+                "text-primary": item.isActive(editor),
               })}
             />
           </Button>

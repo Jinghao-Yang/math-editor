@@ -5,6 +5,7 @@ import * as pdfjs from 'pdfjs-dist';
 import { GlobalWorkerOptions } from 'pdfjs-dist';
 import { Upload, ZoomIn, ZoomOut } from 'lucide-react';
 import { PdfAnnotationToolbar } from './AnnotationToolbar';
+import { useI18n } from '@/lib/i18n';
 
 // 设置 PDF.js worker
 if (typeof window !== 'undefined') {
@@ -42,6 +43,7 @@ export function PdfViewer({
   const [selectedColor, setSelectedColor] = useState('#ffff00');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { t } = useI18n();
 
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -120,7 +122,7 @@ export function PdfViewer({
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition">
             <Upload className="w-4 h-4" />
-            <span>上传PDF</span>
+            <span>{t("pdf.uploadPdf")}</span>
             <input 
               type="file" 
               accept="application/pdf" 
@@ -168,7 +170,7 @@ export function PdfViewer({
         <div ref={containerRef} className="relative inline-block bg-white shadow-lg">
           {!pdf ? (
             <div className="flex items-center justify-center min-h-[400px] text-gray-400">
-              请上传PDF文件
+              {t("pdf.pleaseUploadPdf")}
             </div>
           ) : (
             <canvas ref={canvasRef} />

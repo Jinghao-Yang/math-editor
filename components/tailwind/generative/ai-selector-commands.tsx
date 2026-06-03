@@ -1,26 +1,27 @@
 import { ArrowDownWideNarrow, CheckCheck, RefreshCcwDot, StepForward, WrapText } from "lucide-react";
 import { getPrevText, useEditor } from "@/lib/editor-core";
 import { CommandGroup, CommandItem, CommandSeparator } from "../ui/command";
+import { useI18n } from "@/lib/i18n";
 
 const options = [
   {
     value: "improve",
-    label: "Improve writing",
+    labelKey: "ai.improveWriting" as const,
     icon: RefreshCcwDot,
   },
   {
     value: "fix",
-    label: "Fix grammar",
+    labelKey: "ai.fixGrammar" as const,
     icon: CheckCheck,
   },
   {
     value: "shorter",
-    label: "Make shorter",
+    labelKey: "ai.makeShorter" as const,
     icon: ArrowDownWideNarrow,
   },
   {
     value: "longer",
-    label: "Make longer",
+    labelKey: "ai.makeLonger" as const,
     icon: WrapText,
   },
 ];
@@ -31,10 +32,11 @@ interface AISelectorCommandsProps {
 
 const AISelectorCommands = ({ onSelect }: AISelectorCommandsProps) => {
   const { editor } = useEditor();
+  const { t } = useI18n();
 
   return (
     <>
-      <CommandGroup heading="Edit or review selection">
+      <CommandGroup heading={t("ai.editOrReview")}>
         {options.map((option) => (
           <CommandItem
             onSelect={(value) => {
@@ -47,12 +49,12 @@ const AISelectorCommands = ({ onSelect }: AISelectorCommandsProps) => {
             value={option.value}
           >
             <option.icon className="h-4 w-4 text-purple-500" />
-            {option.label}
+            {t(option.labelKey)}
           </CommandItem>
         ))}
       </CommandGroup>
       <CommandSeparator />
-      <CommandGroup heading="Use AI to do more">
+      <CommandGroup heading={t("ai.useAiMore")}>
         <CommandItem
           onSelect={() => {
             const pos = editor.state.selection.from;
@@ -63,7 +65,7 @@ const AISelectorCommands = ({ onSelect }: AISelectorCommandsProps) => {
           className="gap-2 px-4"
         >
           <StepForward className="h-4 w-4 text-purple-500" />
-          Continue writing
+          {t("ai.continueWriting")}
         </CommandItem>
       </CommandGroup>
     </>

@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getAllProjects, getAllDocuments } from "@/lib/store/db";
-import { FileText, Calendar, Clock } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/tailwind/ui/card";
-import { Badge } from "@/components/tailwind/ui/badge";
+import { FileText, Calendar as CalendarIcon, Clock } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface DocumentData {
   "document/id"?: string;
@@ -29,207 +27,159 @@ interface CalendarViewProps {
   selectedDocumentId?: string | null;
 }
 
-export function CalendarView({ 
+export function CalendarView({
   onSelectDocument,
-  selectedDocumentId 
+  selectedDocumentId,
 }: CalendarViewProps) {
+  const { locale, t } = useI18n();
   const [documents, setDocuments] = useState<DocumentData[]>([]);
   const [projects, setProjects] = useState<ProjectData[]>([]);
 
   const loadData = useCallback(() => {
-    try {
-      const allDocs = getAllDocuments() as unknown as DocumentData[];
-      setDocuments(allDocs.filter((d) => d["document/id"]));
-    } catch {
-      setDocuments([]);
-    }
-    try {
-      setProjects(getAllProjects() as unknown as ProjectData[]);
-    } catch {
-      setProjects([]);
-    }
+    const allDocs = getAllDocuments() as unknown as DocumentData[];
+    setDocuments(allDocs.filter((d) => d["document/id"]));
+    setProjects(getAllProjects() as unknown as ProjectData[]);
   }, []);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const projectsMap = useCallback(() => {
-    const map: Record<string, string> = {};
-    for (const project of projects) {
-      if (project["project/id"] && project["project/name"]) {
-        map[project["project/id"]] = project["project/name"];
-      }
-    }
-    return map;
-  }, [projects]);
+  const projectNames = Object.fromEntries(
+    projects
+      .filter((p) => p["project/id"] && p["project/name"])
+      .map((p) => [p["project/id"], p["project/name"]])
+  );
 
-  const pmap = projectsMap();
-
-  const groupByDate = () => {
+  const groupedByDate = (() => {
     const groups: Record<string, DocumentData[]> = {};
-
     for (const doc of documents) {
       const dateStr = doc["document/updatedAt"];
       if (!dateStr) continue;
-
-      const date = new Date(dateStr);
-      const key = date.toISOString().split("T")[0];
-
+      const key = new Date(dateStr).toISOString().split("T")[0];
       if (!groups[key]) {
         groups[key] = [];
       }
       groups[key].push(doc);
     }
-
     return groups;
-  };
+  })();
 
-  const groupedByDate = groupByDate();
-
-  const sortedDates = Object.keys(groupedByDate).sort((a, b) =>
-    new Date(b).getTime() - new Date(a).getTime()
+  const sortedDates = Object.keys(groupedByDate).sort(
+    (a, b) => new Date(b).getTime() - new Date(a).getTime()
   );
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    if (dateStr === today.toISOString().split("T")[0]) {
-      return "Today";
-    } else if (dateStr === yesterday.toISOString().split("T")[0]) {
-      return "Yesterday";
-    } else {
-      return date.toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      });
-    }
-  };
+  const formatDateLabel = (dateStr: string) => {
+    const today = new Date().toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 86400000)
+      .toISOString()
+      .split("T")[0];
 
-  const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
+    if (dateStr === today) return t("knowledgeBase.today");
+    if (dateStr === yesterday) return t("knowledgeBase.yesterday");
+
+    return new Date(dateStr).toLocaleDateString(locale, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
-  const getSyncBadgeVariant = (status: string) => {
-    switch (status) {
-      case "synced":
-        return "default" as const;
-      case "pending":
-        return "secondary" as const;
-      case "failed":
-        return "destructive" as const;
-      default:
-        return "outline" as const;
-    }
-  };
+  const formatTime = (dateStr: string) =>
+    new Date(dateStr).toLocaleTimeString(locale, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+
+  if (documents.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center px-6 py-14 md:py-16 rounded-[16px] border border-math-border bg-math-surface">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EEF2FF] text-math-brand">
+          <CalendarIcon className="h-7 w-7" />
+        </div>
+        <h3 className="mt-6 max-w-sm text-balance text-center text-lg font-semibold text-math-text">
+          {t("knowledgeBase.calendarEmptyTitle")}
+        </h3>
+        <p className="mt-2 max-w-md text-balance text-center text-sm leading-relaxed text-math-text-secondary">
+          {t("knowledgeBase.calendarEmptyDescription")}
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {documents.length === 0 ? (
-        <Card className="border-dashed border-2 bg-gradient-to-b from-muted/30 to-transparent">
-          <div className="text-center py-16">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/20 dark:to-purple-900/20 flex items-center justify-center mx-auto mb-6 ring-1 ring-violet-200/50 dark:ring-violet-700/30">
-              <Calendar className="h-10 w-10 text-violet-500" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">No documents yet</h3>
-            <p className="text-muted-foreground">
-              Create and edit documents to see them organized by date.
-            </p>
-          </div>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {sortedDates.map((dateStr) => {
-            const docs = groupedByDate[dateStr];
-            return (
-              <div key={dateStr} className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold">
-                      {formatDate(dateStr)}
-                    </h3>
-                  </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {docs.length} {docs.length === 1 ? "document" : "documents"}
-                  </Badge>
-                  <div className="flex-1 h-px bg-border" />
-                </div>
-                
-                <div className="space-y-2 pl-6 border-l-2 border-border">
-                  {docs.map((doc) => {
-                    const docId = doc["document/id"];
-                    const projectName = doc["document/project"]?.["project/id"]
-                      ? pmap[doc["document/project"]["project/id"]]
-                      : null;
-                    
-                    return (
-                      <Card 
-                        key={docId}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (onSelectDocument && docId) {
-                            onSelectDocument(docId);
-                          }
-                        }}
-                        className={cn(
-                          "group hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-200 border-border/50 overflow-hidden cursor-pointer",
-                          selectedDocumentId === docId && "border-primary/50 shadow-md"
-                        )}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <CardHeader className="p-3.5 pb-1.5 relative">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className="w-7 h-7 rounded-md bg-muted/60 flex items-center justify-center flex-shrink-0">
-                                <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                              </div>
-                              <CardTitle className="text-sm font-semibold truncate">
-                                {doc["document/title"] || "Untitled"}
-                              </CardTitle>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="p-3 pt-1">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                <span>{formatTime(doc["document/updatedAt"])}</span>
-                              </div>
-                              {projectName && (
-                                <Badge variant="outline" className="text-xs">
-                                  {projectName}
-                                </Badge>
-                              )}
-                            </div>
-                            <Badge 
-                              variant={getSyncBadgeVariant(doc["document/syncStatus"])} 
-                              className="text-xs"
-                            >
-                              {doc["document/syncStatus"] || "unsynced"}
-                            </Badge>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
+    <div className="space-y-8">
+      {sortedDates.map((dateStr) => {
+        const docs = groupedByDate[dateStr];
+        return (
+          <div key={dateStr}>
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#EEF2FF] text-math-brand">
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                </span>
+                <h3 className="text-sm font-semibold tracking-tight text-math-text">
+                  {formatDateLabel(dateStr)}
+                </h3>
               </div>
-            );
-          })}
-        </div>
-      )}
+              <span className="text-xs font-medium tabular-nums text-math-text-tertiary">
+                · {docs.length}
+              </span>
+              <div className="flex-1 h-px bg-math-border" />
+            </div>
+
+            <div className="ml-9 space-y-2 border-l-2 border-math-border pl-5">
+              {docs.map((doc) => {
+                const docId = doc["document/id"];
+                const projectName =
+                  doc["document/project"]?.["project/id"]
+                    ? projectNames[doc["document/project"]["project/id"]]
+                    : null;
+
+                return (
+                  <button
+                    type="button"
+                    key={docId}
+                    onClick={() => docId && onSelectDocument?.(docId)}
+                    className={cn(
+                      "w-full text-left",
+                      "object-card p-5",
+                      "cursor-pointer",
+                      selectedDocumentId === docId && "selected"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-math-hover text-math-text-secondary">
+                          <FileText className="h-3.5 w-3.5" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-[20px] font-bold tracking-tight leading-snug truncate text-math-text">
+                            {doc["document/title"] ||
+                              t("common.untitledDocument")}
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-[14px] text-math-text-secondary">
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {formatTime(doc["document/updatedAt"] || "")}
+                            </span>
+                            {projectName && (
+                              <span className="px-2.5 py-1 bg-math-hover text-math-text-secondary rounded-full text-[11px] font-medium border border-math-border">
+                                {projectName}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

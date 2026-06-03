@@ -5,6 +5,7 @@ import { ThemeProvider, useTheme } from "next-themes";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/react";
 import useLocalStorage from "@/hooks/use-local-storage";
+import { I18nProvider, type Locale } from "@/lib/i18n";
 
 export const AppContext = createContext<{
   font: string;
@@ -21,21 +22,29 @@ const ToasterProvider = () => {
   return <Toaster theme={theme} />;
 };
 
-export default function Providers({ children }: { children: ReactNode }) {
+export default function Providers({
+  children,
+  initialLocale,
+}: {
+  children: ReactNode;
+  initialLocale: Locale;
+}) {
   const [font, setFont] = useLocalStorage<string>("novel__font", "Default");
 
   return (
-    <ThemeProvider attribute="class" enableSystem disableTransitionOnChange defaultTheme="system">
-      <AppContext.Provider
-        value={{
-          font,
-          setFont,
-        }}
-      >
-        <ToasterProvider />
-        {children}
-        <Analytics />
-      </AppContext.Provider>
+    <ThemeProvider attribute="class" enableSystem defaultTheme="system">
+      <I18nProvider initialLocale={initialLocale}>
+        <AppContext.Provider
+          value={{
+            font,
+            setFont,
+          }}
+        >
+          <ToasterProvider />
+          {children}
+          <Analytics />
+        </AppContext.Provider>
+      </I18nProvider>
     </ThemeProvider>
   );
 }

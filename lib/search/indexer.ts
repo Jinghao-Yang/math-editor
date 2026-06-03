@@ -111,13 +111,13 @@ export function initializeSearchIndex(doc?: Y.Doc): void {
     return;
   }
 
+  searchIndex = createSearchIndex();
+
   if (doc) {
     ydoc = doc;
     searchIndexMap = ydoc.getMap("searchIndex");
     loadIndexFromYjs();
   }
-
-  searchIndex = createSearchIndex();
 
   reindexAll();
 }
@@ -330,9 +330,8 @@ export function search(query: string, limit = 20): SearchResult[] {
     const doc = documentStore.get(id);
     if (!doc) continue;
 
-    const fullText = `${doc.title} ${doc.content}`;
-    const highlights = findHighlights(fullText, query);
     const snippet = createSnippet(doc.content, query);
+    const highlights = findHighlights(snippet, query);
 
     searchResults.push({
       id: doc.id,
@@ -367,5 +366,27 @@ export function clearIndex(): void {
 
   if (searchIndexMap) {
     searchIndexMap.clear();
+  }
+}
+
+export function replaceIndex(documents: SearchDocument[]): void {
+  if (!searchIndex) {
+    initializeSearchIndex();
+  }
+
+  documentStore.clear();
+  searchIndex = createSearchIndex();
+
+  for (const doc of documents) {
+    documentStore.set(doc.id, doc);
+    const indexedText = tokenizeChinese(`${doc.title} ${doc.content}`).join(" ");
+    searchIndex!.add(doc.id, indexedText);
+  }
+
+  if (searchIndexMap) {
+    searchIndexMap.clear();
+    documentStore.forEach((doc, id) => {
+      searchIndexMap!.set(id, JSON.stringify(doc));
+    });
   }
 }

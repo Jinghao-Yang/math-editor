@@ -6,37 +6,47 @@ import "@/styles/_keyframe-animations.scss";
 
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
+import { DEFAULT_LOCALE, I18N_COOKIE_NAME, normalizeLocale, dictionaries } from "@/lib/i18n";
 import Providers from "./providers";
 
-const title = "Novel - Notion-style WYSIWYG editor with AI-powered autocompletions";
-const description =
-  "Novel is a Notion-style WYSIWYG editor with AI-powered autocompletions. Built with Tiptap, OpenAI, and Vercel AI SDK.";
+export async function generateMetadata(): Promise<Metadata> {
+  const cookieStore = await cookies();
+  const locale = normalizeLocale(cookieStore.get(I18N_COOKIE_NAME)?.value) ?? DEFAULT_LOCALE;
+  const messages = dictionaries[locale];
 
-export const metadata: Metadata = {
-  title,
-  description,
-  openGraph: {
+  const title = messages.metadata.title;
+  const description = messages.metadata.description;
+
+  return {
     title,
     description,
-  },
-  twitter: {
-    title,
-    description,
-    card: "summary_large_image",
-    creator: "@steventey",
-  },
-  metadataBase: new URL("https://novel.sh"),
-};
+    openGraph: {
+      title,
+      description,
+    },
+    twitter: {
+      title,
+      description,
+      card: "summary_large_image",
+      creator: "@steventey",
+    },
+    metadataBase: new URL("https://novel.sh"),
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const cookieStore = await cookies();
+  const initialLocale = normalizeLocale(cookieStore.get(I18N_COOKIE_NAME)?.value) ?? DEFAULT_LOCALE;
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={initialLocale} suppressHydrationWarning>
       <body>
-        <Providers>{children}</Providers>
+        <Providers initialLocale={initialLocale}>{children}</Providers>
       </body>
     </html>
   );

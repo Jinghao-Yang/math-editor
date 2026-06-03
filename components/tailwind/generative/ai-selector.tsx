@@ -15,6 +15,7 @@ import Magic from "../ui/icons/magic";
 import { ScrollArea } from "../ui/scroll-area";
 import AICompletionCommands from "./ai-completion-command";
 import AISelectorCommands from "./ai-selector-commands";
+import { useI18n } from "@/lib/i18n";
 //TODO: I think it makes more sense to create a custom Tiptap extension for this functionality https://tiptap.dev/docs/editor/ai/introduction
 
 interface AISelectorProps {
@@ -25,13 +26,14 @@ interface AISelectorProps {
 export function AISelector({ onOpenChange }: AISelectorProps) {
   const { editor } = useEditor();
   const [inputValue, setInputValue] = useState("");
+  const { t } = useI18n();
 
   const { completion, complete, isLoading } = useCompletion({
     // id: "novel",
     api: "/api/generate",
     onResponse: (response) => {
       if (response.status === 429) {
-        toast.error("You have reached your request limit for the day.");
+        toast.error(t("ai.requestLimit"));
         return;
       }
     },
@@ -57,7 +59,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
       {isLoading && (
         <div className="flex h-12 w-full items-center px-4 text-sm font-medium text-muted-foreground text-purple-500">
           <Magic className="mr-2 h-4 w-4 shrink-0  " />
-          AI is thinking
+          {t("ai.aiThinking")}
           <div className="ml-2 mt-1">
             <CrazySpinner />
           </div>
@@ -70,7 +72,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
               value={inputValue}
               onValueChange={setInputValue}
               autoFocus
-              placeholder={hasCompletion ? "Tell AI what to do next" : "Ask AI to edit or generate..."}
+              placeholder={hasCompletion ? t("ai.tellAiNext") : t("ai.askAiEdit")}
               onFocus={() => addAIHighlight(editor)}
             />
             <Button

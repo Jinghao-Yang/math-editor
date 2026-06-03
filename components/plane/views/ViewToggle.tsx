@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/tailwind/ui/dropdown-menu";
+import { useI18n } from "@/lib/i18n";
 
 export type ViewType = "list" | "kanban" | "calendar";
 
@@ -17,18 +18,16 @@ interface ViewToggleProps {
   onViewChange: (view: ViewType) => void;
 }
 
-const viewOptions: { value: ViewType; label: string; icon: React.ElementType }[] = [
-  { value: "list", label: "List", icon: List },
-  { value: "kanban", label: "Board", icon: LayoutGrid },
-  { value: "calendar", label: "Calendar", icon: Calendar },
-];
-
 export function ViewToggle({ currentView, onViewChange }: ViewToggleProps) {
-  const currentOption = viewOptions.find((opt) => opt.value === currentView);
-  const CurrentIcon = currentOption?.icon || List;
+  const { t } = useI18n();
+  const viewOptions: { value: ViewType; label: string; icon: React.ElementType }[] = [
+    { value: "list", label: t("knowledgeBase.viewList"), icon: List },
+    { value: "kanban", label: t("knowledgeBase.viewBoard"), icon: LayoutGrid },
+    { value: "calendar", label: t("knowledgeBase.viewCalendar"), icon: Calendar },
+  ];
 
   return (
-    <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+    <div className="flex items-center gap-1 bg-[#F3F4F6] rounded-lg p-1">
       {viewOptions.map((option) => {
         const Icon = option.icon;
         const isActive = currentView === option.value;
@@ -41,7 +40,7 @@ export function ViewToggle({ currentView, onViewChange }: ViewToggleProps) {
             onClick={() => onViewChange(option.value)}
             className={cn(
               "gap-1.5 h-8",
-              isActive && "bg-background shadow-sm"
+              isActive && "bg-surface shadow-sm"
             )}
           >
             <Icon className="h-4 w-4" />
@@ -58,6 +57,12 @@ export function ViewToggleDropdown({
   onViewChange,
   className 
 }: ViewToggleProps & { className?: string }) {
+  const { t } = useI18n();
+  const viewOptions: { value: ViewType; label: string; icon: React.ElementType }[] = [
+    { value: "list", label: t("knowledgeBase.viewList"), icon: List },
+    { value: "kanban", label: t("knowledgeBase.viewBoard"), icon: LayoutGrid },
+    { value: "calendar", label: t("knowledgeBase.viewCalendar"), icon: Calendar },
+  ];
   const currentOption = viewOptions.find((opt) => opt.value === currentView);
   const CurrentIcon = currentOption?.icon || List;
 
@@ -78,7 +83,7 @@ export function ViewToggleDropdown({
               onClick={() => onViewChange(option.value)}
               className={cn(
                 "gap-2",
-                currentView === option.value && "bg-muted"
+                currentView === option.value && "bg-[#F3F4F6]"
               )}
             >
               <Icon className="h-4 w-4" />

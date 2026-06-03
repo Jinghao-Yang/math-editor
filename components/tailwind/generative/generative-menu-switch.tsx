@@ -3,6 +3,7 @@ import { Fragment, type ReactNode, useEffect } from "react";
 import { Button } from "../ui/button";
 import Magic from "../ui/icons/magic";
 import { AISelector } from "./ai-selector";
+import { useI18n } from "@/lib/i18n";
 
 interface GenerativeMenuSwitchProps {
   children: ReactNode;
@@ -11,10 +12,11 @@ interface GenerativeMenuSwitchProps {
 }
 const GenerativeMenuSwitch = ({ children, open, onOpenChange }: GenerativeMenuSwitchProps) => {
   const { editor } = useEditor();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!open) removeAIHighlight(editor);
-  }, [open]);
+  }, [open, editor]);
   return (
     <EditorBubble
       tippyOptions={{
@@ -36,7 +38,7 @@ const GenerativeMenuSwitch = ({ children, open, onOpenChange }: GenerativeMenuSw
             size="sm"
           >
             <Magic className="h-5 w-5" />
-            Ask AI
+            {t("ai.askAi")}
           </Button>
           {children}
         </Fragment>
